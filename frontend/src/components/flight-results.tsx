@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { FlightOfferCard } from "@/components/flight-offer-card";
+import { FlexibleDateMatrix } from "@/components/flexible-date-matrix";
 import { ResultState } from "@/components/result-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { searchFlights } from "@/lib/api/search";
 import { sortFlightOffers } from "@/lib/flight-sorting";
+import { farePairKey } from "@/lib/flexible-date-matrix";
 import type {
   CabinClass,
   FlightSearchRequest,
@@ -78,6 +80,7 @@ export function FlightResults({
   const [loading, setLoading] = useState(Boolean(request));
   const [retryKey, setRetryKey] = useState(0);
   const [sortMode, setSortMode] = useState<SortMode>("best");
+  const [selectedPair, setSelectedPair] = useState<string | null>(null);
 
   useEffect(() => {
     if (!request) return;
@@ -94,10 +97,14 @@ export function FlightResults({
     return () => controller.abort();
   }, [request, retryKey]);
 
-  const offers = useMemo(
-    () => sortFlightOffers(data?.offers ?? [], sortMode),
-    [data?.offers, sortMode],
-  );
+  const offers = useMemo(() => {
+    const matchingOffers = selectedPair
+      ? (data?.offers ?? []).filter(
+          (offer) => farePairKey(offer.departure_time.slice(0, 10), offer.return_date) === selectedPair,
+        )
+      : (data?.offers ?? []);
+    return sortFlightOffers(matchingOffers, sortMode);
+  }, [data?.offers, selectedPair, sortMode]);
 
   if (!request) {
     return (
@@ -135,9 +142,16 @@ export function FlightResults({
 
   return (
     <div className="space-y-4">
+      <FlexibleDateMatrix
+        offers={data.offers}
+        selectedPair={selectedPair}
+        onSelectPair={setSelectedPair}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{data.result_count} mock offers</p>
+          <p className="text-sm text-muted-foreground">
+            {selectedPair ? `${offers.length} of ${data.result_count}` : data.result_count} mock offers
+          </p>
           <h2 className="text-xl font-semibold">
             {request.origin} to {request.destination}
           </h2>
@@ -172,6 +186,12 @@ export function ResultsSkeleton() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-9 w-36" />
       </div>
+      <Card>
+        <CardContent className="p-6">
+          <Skeleton className="mb-5 h-14 w-72 max-w-full" />
+          <Skeleton className="h-56 w-full" />
+        </CardContent>
+      </Card>
       {[0, 1, 2].map((item) => (
         <Card key={item}>
           <CardContent className="grid gap-6 p-6 sm:grid-cols-3">

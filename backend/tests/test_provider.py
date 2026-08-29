@@ -13,6 +13,8 @@ async def test_mock_provider_is_deterministic_and_respects_stop_limit() -> None:
     assert [offer.price for offer in first] == [offer.price for offer in second]
     assert all(offer.stops <= 1 for offer in first)
     assert len({offer.departure_time.date() for offer in first}) == 3
+    assert len({offer.return_date for offer in first}) == 3
+    assert len({(offer.departure_time.date(), offer.return_date) for offer in first}) == 9
 
 
 async def test_mock_provider_handles_a_single_departure_date() -> None:
