@@ -79,4 +79,10 @@ export interface FareHistoryResponse {
   points: FareHistoryPoint[];
 }
 
+export interface TrackedRoute extends FlightSearchRequest {
+  id: string;
+  active: boolean;
+  created_at: string;
+}
+
 export type SortMode = "best" | "cheapest" | "fastest";

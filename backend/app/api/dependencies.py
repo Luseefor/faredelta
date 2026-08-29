@@ -8,8 +8,10 @@ from app.providers.base import FlightProvider
 from app.providers.mock import MockFlightProvider
 from app.repositories.fare_history import FareHistoryRepository
 from app.repositories.flight_searches import FlightSearchRepository
+from app.repositories.tracked_routes import TrackedRouteRepository
 from app.services.fare_history import FareHistoryService
 from app.services.flight_search import FlightSearchService
+from app.services.tracked_routes import TrackedRouteService
 
 
 def get_flight_provider() -> FlightProvider:
@@ -34,3 +36,10 @@ def get_fare_history_service(session: SessionDependency) -> FareHistoryService:
 
 
 FareHistoryServiceDependency = Annotated[FareHistoryService, Depends(get_fare_history_service)]
+
+
+def get_tracked_route_service(session: SessionDependency) -> TrackedRouteService:
+    return TrackedRouteService(TrackedRouteRepository(session))
+
+
+TrackedRouteServiceDependency = Annotated[TrackedRouteService, Depends(get_tracked_route_service)]

@@ -6,6 +6,7 @@ import { FlightOfferCard } from "@/components/flight-offer-card";
 import { FlexibleDateMatrix } from "@/components/flexible-date-matrix";
 import { FareHistoryChart } from "@/components/fare-history-chart";
 import { ResultState } from "@/components/result-state";
+import { TrackRouteButton } from "@/components/track-route-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -162,7 +163,8 @@ export function FlightResults({
             {request.origin} to {request.destination}
           </h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <TrackRouteButton request={request} />
           <span className="text-sm text-muted-foreground">Sort by</span>
           <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
             <SelectTrigger className="w-36" aria-label="Sort flight offers">

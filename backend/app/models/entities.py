@@ -105,10 +105,14 @@ class FareHistory(Base):
 
 class TrackedRoute(TimestampMixin, Base):
     __tablename__ = "tracked_routes"
-    __table_args__ = (Index("ix_tracked_routes_user_id", "user_id"),)
+    __table_args__ = (
+        Index("ix_tracked_routes_user_id", "user_id"),
+        Index("ix_tracked_routes_anonymous_id", "anonymous_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    anonymous_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     origin: Mapped[str] = mapped_column(String(3), nullable=False)
     destination: Mapped[str] = mapped_column(String(3), nullable=False)
     earliest_departure_date: Mapped[date] = mapped_column(Date, nullable=False)

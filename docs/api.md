@@ -39,3 +39,9 @@ Returns up to 30 saved lowest-fare observations for a route. Optional departure 
 ```
 
 The response includes the current, lowest, and highest saved prices plus timestamped chart points. Version 1 history comes from mock-provider searches and is clearly labeled as early data in the interface.
+
+## Tracked routes
+
+`GET /api/tracked-routes`, `POST /api/tracked-routes`, and `DELETE /api/tracked-routes/{id}` provide anonymous watchlist management. The same-origin Next.js layer assigns an HTTP-only anonymous browser identifier and forwards it in `X-FareDelta-Anonymous-ID`; clients cannot list or delete another identifier's routes.
+
+The create body uses the same normalized criteria as a flight search. Saving the same active criteria twice is idempotent.

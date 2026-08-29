@@ -1,6 +1,6 @@
 # FareDelta
 
-FareDelta is a provider-neutral flight search and airfare-intelligence foundation. Version 1 searches flexible round-trip date windows through a deterministic mock provider, compares date pairs in a fare matrix, and visualizes saved PostgreSQL price history.
+FareDelta is a provider-neutral flight search and airfare-intelligence foundation. Version 1 searches flexible round-trip date windows through a deterministic mock provider, compares date pairs in a fare matrix, visualizes saved PostgreSQL price history, and provides an anonymous tracked-routes watchlist.
 
 ## Quick start
 

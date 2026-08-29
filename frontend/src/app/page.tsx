@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, BarChart3, CalendarRange, Plane, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, BarChart3, Bell, CalendarRange, Plane, ShieldCheck, Sparkles } from "lucide-react";
 
 import { FlightSearchForm } from "@/components/flight-search-form";
 
@@ -20,6 +20,7 @@ export default function Home() {
               <span className="text-xl font-semibold tracking-[-0.03em]">FareDelta</span>
             </Link>
             <div className="flex items-center gap-3">
+              <Link href="/tracked" className="inline-flex items-center gap-2 text-sm text-white/75 hover:text-white"><Bell className="size-4" />Tracked routes</Link>
               <span className="hidden text-sm text-white/60 sm:inline">Built for flexible travelers</span>
               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">Private beta</span>
             </div>

@@ -60,6 +60,42 @@ async def test_search_http_flow_persists_all_snapshots() -> None:
             )
             assert invalid_history.status_code == 422
 
+            owner_headers = {"X-FareDelta-Anonymous-ID": "aa8b67fb-7c41-4d08-8fd3-894732223f30"}
+            tracked = await client.post(
+                "/api/tracked-routes",
+                headers=owner_headers,
+                json={
+                    "origin": "ORD",
+                    "destination": "LAX",
+                    "earliest_departure_date": "2026-10-10",
+                    "latest_departure_date": "2026-10-12",
+                    "earliest_return_date": "2026-10-16",
+                    "latest_return_date": "2026-10-19",
+                    "travelers": 1,
+                    "cabin_class": "economy",
+                    "maximum_stops": 1,
+                },
+            )
+            assert tracked.status_code == 201
+            tracked_id = tracked.json()["id"]
+            duplicate = await client.post(
+                "/api/tracked-routes", headers=owner_headers, json=tracked.json()
+            )
+            assert duplicate.status_code == 201
+            assert duplicate.json()["id"] == tracked_id
+            listed = await client.get("/api/tracked-routes", headers=owner_headers)
+            assert [route["id"] for route in listed.json()] == [tracked_id]
+            other_owner = await client.get(
+                "/api/tracked-routes",
+                headers={"X-FareDelta-Anonymous-ID": "36cb95a8-92e2-4fca-a1e8-bd822bb825ae"},
+            )
+            assert other_owner.json() == []
+            removed = await client.delete(
+                f"/api/tracked-routes/{tracked_id}", headers=owner_headers
+            )
+            assert removed.status_code == 204
+            assert (await client.get("/api/tracked-routes", headers=owner_headers)).json() == []
+
         async with factory() as session:
             assert await session.scalar(select(func.count()).select_from(FlightSearch)) == 1
             assert await session.scalar(select(func.count()).select_from(FlightOfferRecord)) == 9
