@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { FlightOfferCard } from "@/components/flight-offer-card";
 import { FlexibleDateMatrix } from "@/components/flexible-date-matrix";
+import { FareHistoryChart } from "@/components/fare-history-chart";
 import { ResultState } from "@/components/result-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -146,6 +147,11 @@ export function FlightResults({
         offers={data.offers}
         selectedPair={selectedPair}
         onSelectPair={setSelectedPair}
+      />
+      <FareHistoryChart
+        origin={request.origin}
+        destination={request.destination}
+        selectedPair={selectedPair}
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>

@@ -59,4 +59,24 @@ export interface FlightSearchResponse {
   offers: FlightOffer[];
 }
 
+export interface FareHistoryPoint {
+  retrieved_at: string;
+  lowest_price: number;
+  currency: string;
+  offers_sampled: number;
+}
+
+export interface FareHistoryResponse {
+  origin: string;
+  destination: string;
+  departure_date: string | null;
+  return_date: string | null;
+  currency: string;
+  point_count: number;
+  current_price: number | null;
+  lowest_price: number | null;
+  highest_price: number | null;
+  points: FareHistoryPoint[];
+}
+
 export type SortMode = "best" | "cheapest" | "fastest";

@@ -46,6 +46,20 @@ async def test_search_http_flow_persists_all_snapshots() -> None:
             assert body["result_count"] == 9
             assert isinstance(body["offers"][0]["price"], int | float)
 
+            history = await client.get(
+                "/api/flights/history", params={"origin": "ord", "destination": "lax"}
+            )
+            assert history.status_code == 200
+            history_body = history.json()
+            assert history_body["point_count"] == 1
+            assert history_body["points"][0]["offers_sampled"] == 9
+            assert isinstance(history_body["lowest_price"], int | float)
+
+            invalid_history = await client.get(
+                "/api/flights/history", params={"origin": "ORD", "destination": "ORD"}
+            )
+            assert invalid_history.status_code == 422
+
         async with factory() as session:
             assert await session.scalar(select(func.count()).select_from(FlightSearch)) == 1
             assert await session.scalar(select(func.count()).select_from(FlightOfferRecord)) == 9

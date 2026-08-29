@@ -30,3 +30,12 @@ Airport codes are three letters; traveler count is 1–9; maximum stops is 0–2
 
 Validation failures return HTTP 422. Provider and persistence failures return stable HTTP 502/503 messages without internal details.
 
+## `GET /api/flights/history`
+
+Returns up to 30 saved lowest-fare observations for a route. Optional departure and return dates narrow the history to one date pair.
+
+```text
+/api/flights/history?origin=ORD&destination=LAX&departure_date=2026-10-10&return_date=2026-10-18
+```
+
+The response includes the current, lowest, and highest saved prices plus timestamped chart points. Version 1 history comes from mock-provider searches and is clearly labeled as early data in the interface.

@@ -99,3 +99,31 @@ class FlightSearchResponse(BaseModel):
     result_count: int
     retrieved_at: datetime
     offers: list[FlightOffer]
+
+
+class FareHistoryPoint(BaseModel):
+    retrieved_at: datetime
+    lowest_price: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    offers_sampled: int = Field(gt=0)
+
+    @field_serializer("lowest_price", when_used="json")
+    def serialize_price(self, value: Decimal) -> float:
+        return float(value)
+
+
+class FareHistoryResponse(BaseModel):
+    origin: str
+    destination: str
+    departure_date: date | None = None
+    return_date: date | None = None
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    point_count: int = Field(ge=0)
+    current_price: Decimal | None = None
+    lowest_price: Decimal | None = None
+    highest_price: Decimal | None = None
+    points: list[FareHistoryPoint]
+
+    @field_serializer("current_price", "lowest_price", "highest_price", when_used="json")
+    def serialize_optional_price(self, value: Decimal | None) -> float | None:
+        return float(value) if value is not None else None
