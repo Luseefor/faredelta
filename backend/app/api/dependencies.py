@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.db.session import get_session
-from app.providers.amadeus import AmadeusFlightProvider
 from app.providers.base import FlightProvider, UnavailableFlightProvider
+from app.providers.duffel import DuffelFlightProvider
 from app.providers.mock import MockFlightProvider
 from app.repositories.fare_history import FareHistoryRepository
 from app.repositories.flight_searches import FlightSearchRepository
@@ -23,14 +23,11 @@ def get_flight_provider() -> FlightProvider:
     settings = get_settings()
     if settings.flight_provider == "mock":
         return MockFlightProvider()
-    if not settings.amadeus_client_id or settings.amadeus_client_secret is None:
-        return UnavailableFlightProvider(
-            "Amadeus Self-Service", "Amadeus credentials are not configured"
-        )
-    return AmadeusFlightProvider(
-        client_id=settings.amadeus_client_id,
-        client_secret=settings.amadeus_client_secret.get_secret_value(),
-        base_url=settings.amadeus_base_url,
+    if settings.duffel_access_token is None:
+        return UnavailableFlightProvider("Duffel", "Duffel access token is not configured")
+    return DuffelFlightProvider(
+        access_token=settings.duffel_access_token.get_secret_value(),
+        base_url=settings.duffel_base_url,
     )
 
 

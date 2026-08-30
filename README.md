@@ -2,7 +2,7 @@
 
 FareDelta is a provider-neutral flight search and airfare-intelligence foundation. Version 1 searches flexible round-trip date windows through a deterministic mock provider, compares date pairs in a fare matrix, visualizes saved PostgreSQL price history, and provides a refreshable tracked-routes watchlist with in-app price movement alerts.
 
-The backend also includes an optional Amadeus Self-Service adapter. Mock mode remains the default, so no external credential is required for local development.
+The backend also includes an optional Duffel Flights adapter. Mock mode remains the default, so no external credential is required for local development.
 
 ## Quick start
 

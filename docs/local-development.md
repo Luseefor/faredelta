@@ -22,15 +22,14 @@ After changing SQLAlchemy models, create and review an Alembic revision before a
 
 No external provider credential is required while the mock provider is active.
 
-## Amadeus sandbox
+## Duffel test mode
 
-Create a Self-Service application in the [Amadeus developer portal](https://developers.amadeus.com/self-service/apis-docs), then set these backend-only values in `backend/.env`:
+Create a test access token from the [Duffel dashboard](https://duffel.com/guides/getting-started), then set these backend-only values in `backend/.env`:
 
 ```dotenv
-FLIGHT_PROVIDER=amadeus
-AMADEUS_CLIENT_ID=your-api-key
-AMADEUS_CLIENT_SECRET=your-api-secret
-AMADEUS_BASE_URL=https://test.api.amadeus.com
+FLIGHT_PROVIDER=duffel
+DUFFEL_ACCESS_TOKEN=duffel_test_your-token
+DUFFEL_BASE_URL=https://api.duffel.com
 ```
 
-Restart FastAPI after changing the provider. Never add real credentials to `.env.example`, Git, frontend variables, or browser code. Set `FLIGHT_PROVIDER=mock` to return to deterministic local results.
+Restart FastAPI after changing the provider. Never add real credentials to `.env.example`, Git, frontend variables, or browser code. Set `FLIGHT_PROVIDER=mock` to return to deterministic local results. Duffel test mode is safe for integration work, but its schedules and prices are not intended to represent live inventory.
