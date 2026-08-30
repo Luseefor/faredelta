@@ -45,3 +45,11 @@ The response includes the current, lowest, and highest saved prices plus timesta
 `GET /api/tracked-routes`, `POST /api/tracked-routes`, and `DELETE /api/tracked-routes/{id}` provide anonymous watchlist management. The same-origin Next.js layer assigns an HTTP-only anonymous browser identifier and forwards it in `X-FareDelta-Anonymous-ID`; clients cannot list or delete another identifier's routes.
 
 The create body uses the same normalized criteria as a flight search. Saving the same active criteria twice is idempotent.
+
+`POST /api/tracked-routes/{id}/refresh` immediately searches through the configured provider, saves the resulting offers and fare history, and updates the tracked route's current and previous lowest prices.
+
+## Scheduled route refreshes
+
+`POST /api/jobs/refresh-tracked-routes` refreshes up to 500 active routes. It is intended for a Render or Railway scheduled job and requires `X-FareDelta-Job-Token` to match the backend-only `TRACKED_ROUTE_JOB_TOKEN` environment variable.
+
+Never expose this token to the frontend. A daily schedule is appropriate for the mock-backed foundation; provider rate limits should determine the production schedule after a real provider is connected.

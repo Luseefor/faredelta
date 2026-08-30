@@ -83,6 +83,10 @@ export interface TrackedRoute extends FlightSearchRequest {
   id: string;
   active: boolean;
   created_at: string;
+  previous_price: number | null;
+  last_price: number | null;
+  currency: string | null;
+  last_checked_at: string | null;
 }
 
 export type SortMode = "best" | "cheapest" | "fastest";

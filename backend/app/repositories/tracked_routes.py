@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +21,27 @@ class TrackedRouteRepository:
         )
         return list((await self.session.scalars(statement)).all())
 
+    async def list_active(self, limit: int = 500) -> list[TrackedRoute]:
+        statement = (
+            select(TrackedRoute)
+            .where(TrackedRoute.active.is_(True))
+            .order_by(TrackedRoute.created_at)
+            .limit(limit)
+        )
+        return list((await self.session.scalars(statement)).all())
+
+    async def get_for_owner(
+        self, route_id: uuid.UUID, anonymous_id: uuid.UUID
+    ) -> TrackedRoute | None:
+        route: TrackedRoute | None = await self.session.scalar(
+            select(TrackedRoute).where(
+                TrackedRoute.id == route_id,
+                TrackedRoute.anonymous_id == anonymous_id,
+                TrackedRoute.active.is_(True),
+            )
+        )
+        return route
+
     async def create_or_get(
         self, anonymous_id: uuid.UUID, request: TrackedRouteCreate
     ) -> TrackedRoute:
@@ -34,6 +57,21 @@ class TrackedRouteRepository:
 
         route = TrackedRoute(anonymous_id=anonymous_id, active=True, **criteria)
         self.session.add(route)
+        await self.session.commit()
+        await self.session.refresh(route)
+        return route
+
+    async def update_price(
+        self,
+        route: TrackedRoute,
+        price: Decimal,
+        currency: str,
+        checked_at: datetime,
+    ) -> TrackedRoute:
+        route.previous_price = route.last_price
+        route.last_price = price
+        route.currency = currency
+        route.last_checked_at = checked_at
         await self.session.commit()
         await self.session.refresh(route)
         return route

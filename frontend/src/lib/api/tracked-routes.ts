@@ -24,3 +24,9 @@ export async function trackRoute(request: FlightSearchRequest) {
 export async function removeTrackedRoute(id: string) {
   return responseOrError<void>(await fetch(`/api/tracked-routes/${id}`, { method: "DELETE" }));
 }
+
+export async function refreshTrackedRoute(id: string) {
+  return responseOrError<TrackedRoute>(
+    await fetch(`/api/tracked-routes/${id}/refresh`, { method: "POST" }),
+  );
+}

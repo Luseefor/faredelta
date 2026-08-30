@@ -123,3 +123,7 @@ class TrackedRoute(TimestampMixin, Base):
     cabin_class: Mapped[str] = mapped_column(String(32), nullable=False, default="economy")
     maximum_stops: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    previous_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    last_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

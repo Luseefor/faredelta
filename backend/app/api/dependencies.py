@@ -11,6 +11,7 @@ from app.repositories.flight_searches import FlightSearchRepository
 from app.repositories.tracked_routes import TrackedRouteRepository
 from app.services.fare_history import FareHistoryService
 from app.services.flight_search import FlightSearchService
+from app.services.tracked_route_refresh import TrackedRouteRefreshService
 from app.services.tracked_routes import TrackedRouteService
 
 
@@ -43,3 +44,16 @@ def get_tracked_route_service(session: SessionDependency) -> TrackedRouteService
 
 
 TrackedRouteServiceDependency = Annotated[TrackedRouteService, Depends(get_tracked_route_service)]
+
+
+def get_tracked_route_refresh_service(
+    session: SessionDependency, provider: ProviderDependency
+) -> TrackedRouteRefreshService:
+    return TrackedRouteRefreshService(
+        provider, TrackedRouteRepository(session), FlightSearchRepository(session)
+    )
+
+
+TrackedRouteRefreshServiceDependency = Annotated[
+    TrackedRouteRefreshService, Depends(get_tracked_route_refresh_service)
+]

@@ -5,7 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException, Response, status
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.dependencies import TrackedRouteServiceDependency
+from app.api.dependencies import (
+    TrackedRouteRefreshServiceDependency,
+    TrackedRouteServiceDependency,
+)
 from app.schemas.tracked_routes import TrackedRouteCreate, TrackedRouteResponse
 
 logger = logging.getLogger(__name__)
@@ -53,3 +56,19 @@ async def delete_tracked_route(
     if not deleted:
         raise HTTPException(status_code=404, detail="Tracked route not found.")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{route_id}/refresh", response_model=TrackedRouteResponse)
+async def refresh_tracked_route(
+    route_id: uuid.UUID,
+    anonymous_id: AnonymousId,
+    service: TrackedRouteRefreshServiceDependency,
+) -> TrackedRouteResponse:
+    try:
+        route = await service.refresh_for_owner(route_id, anonymous_id)
+    except SQLAlchemyError as exc:
+        logger.exception("Could not refresh tracked route")
+        raise HTTPException(status_code=503, detail="The route could not be refreshed.") from exc
+    if route is None:
+        raise HTTPException(status_code=404, detail="Tracked route not found.")
+    return route

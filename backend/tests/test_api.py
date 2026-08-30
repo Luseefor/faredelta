@@ -90,6 +90,19 @@ async def test_search_http_flow_persists_all_snapshots() -> None:
                 headers={"X-FareDelta-Anonymous-ID": "36cb95a8-92e2-4fca-a1e8-bd822bb825ae"},
             )
             assert other_owner.json() == []
+            refreshed = await client.post(
+                f"/api/tracked-routes/{tracked_id}/refresh", headers=owner_headers
+            )
+            assert refreshed.status_code == 200
+            assert isinstance(refreshed.json()["last_price"], int | float)
+            assert refreshed.json()["previous_price"] is None
+            refreshed_again = await client.post(
+                f"/api/tracked-routes/{tracked_id}/refresh", headers=owner_headers
+            )
+            assert refreshed_again.json()["previous_price"] == refreshed.json()["last_price"]
+            assert refreshed_again.json()["last_price"] == refreshed.json()["last_price"]
+            scheduled = await client.post("/api/jobs/refresh-tracked-routes")
+            assert scheduled.status_code == 503
             removed = await client.delete(
                 f"/api/tracked-routes/{tracked_id}", headers=owner_headers
             )
@@ -97,9 +110,9 @@ async def test_search_http_flow_persists_all_snapshots() -> None:
             assert (await client.get("/api/tracked-routes", headers=owner_headers)).json() == []
 
         async with factory() as session:
-            assert await session.scalar(select(func.count()).select_from(FlightSearch)) == 1
-            assert await session.scalar(select(func.count()).select_from(FlightOfferRecord)) == 9
-            assert await session.scalar(select(func.count()).select_from(FareHistory)) == 9
+            assert await session.scalar(select(func.count()).select_from(FlightSearch)) == 3
+            assert await session.scalar(select(func.count()).select_from(FlightOfferRecord)) == 27
+            assert await session.scalar(select(func.count()).select_from(FareHistory)) == 27
     finally:
         app.dependency_overrides.clear()
         await engine.dispose()

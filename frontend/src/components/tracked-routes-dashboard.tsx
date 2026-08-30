@@ -2,19 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarRange, LoaderCircle, Plane, Trash2 } from "lucide-react";
+import { BellRing, CalendarRange, LoaderCircle, Plane, RefreshCw, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listTrackedRoutes, removeTrackedRoute } from "@/lib/api/tracked-routes";
+import { listTrackedRoutes, refreshTrackedRoute, removeTrackedRoute } from "@/lib/api/tracked-routes";
 import { trackedRouteSearchHref } from "@/lib/tracked-route";
+import { getPriceMovement } from "@/lib/price-movement";
 import type { TrackedRoute } from "@/lib/types";
 
 export function TrackedRoutesDashboard() {
   const [routes, setRoutes] = useState<TrackedRoute[] | null>(null);
   const [error, setError] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,22 +50,40 @@ export function TrackedRoutesDashboard() {
                   {route.origin}<Plane className="size-4 text-primary" />{route.destination}
                 </h2>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Stop tracking ${route.origin} to ${route.destination}`}
-                disabled={removing === route.id}
-                onClick={() => {
-                  setRemoving(route.id);
-                  removeTrackedRoute(route.id)
-                    .then(() => setRoutes((current) => current?.filter((item) => item.id !== route.id) ?? []))
-                    .catch(() => setError(true))
-                    .finally(() => setRemoving(null));
-                }}
-              >
-                {removing === route.id ? <LoaderCircle className="animate-spin" /> : <Trash2 />}
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Refresh ${route.origin} to ${route.destination}`}
+                  disabled={refreshing === route.id}
+                  onClick={() => {
+                    setRefreshing(route.id);
+                    refreshTrackedRoute(route.id)
+                      .then((updated) => setRoutes((current) => current?.map((item) => item.id === updated.id ? updated : item) ?? []))
+                      .catch(() => setError(true))
+                      .finally(() => setRefreshing(null));
+                  }}
+                >
+                  {refreshing === route.id ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Stop tracking ${route.origin} to ${route.destination}`}
+                  disabled={removing === route.id}
+                  onClick={() => {
+                    setRemoving(route.id);
+                    removeTrackedRoute(route.id)
+                      .then(() => setRoutes((current) => current?.filter((item) => item.id !== route.id) ?? []))
+                      .catch(() => setError(true))
+                      .finally(() => setRemoving(null));
+                  }}
+                >
+                  {removing === route.id ? <LoaderCircle className="animate-spin" /> : <Trash2 />}
+                </Button>
+              </div>
             </div>
+            <PriceStatus route={route} />
             <div className="grid gap-3 rounded-xl bg-muted/35 p-4 text-sm sm:grid-cols-2">
               <div><p className="text-xs text-muted-foreground">Departure window</p><p className="mt-1 font-medium">{route.earliest_departure_date} – {route.latest_departure_date}</p></div>
               <div><p className="text-xs text-muted-foreground">Return window</p><p className="mt-1 font-medium">{route.earliest_return_date} – {route.latest_return_date}</p></div>
@@ -73,6 +94,45 @@ export function TrackedRoutesDashboard() {
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function PriceStatus({ route }: { route: TrackedRoute }) {
+  const currency = route.currency ?? "USD";
+  const money = (value: number) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value);
+
+  if (route.last_price === null) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+        <RefreshCw className="size-4 text-primary" /> Waiting for the first scheduled or manual check.
+      </div>
+    );
+  }
+
+  const movement = getPriceMovement(route.previous_price, route.last_price);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-primary/5 p-4">
+      <div>
+        <p className="text-xs text-muted-foreground">Latest lowest fare</p>
+        <p className="mt-1 text-2xl font-semibold">{money(route.last_price)}</p>
+      </div>
+      {movement.kind === "drop" ? (
+        <Badge className="gap-1.5 bg-emerald-600 text-white"><BellRing className="size-3" />Price dropped {money(movement.amount)}</Badge>
+      ) : movement.kind === "unchanged" ? (
+        <Badge variant="secondary">No price change</Badge>
+      ) : movement.kind === "increase" ? (
+        <Badge variant="outline">Up {money(movement.amount)}</Badge>
+      ) : (
+        <Badge variant="outline">Baseline saved</Badge>
+      )}
+      <p className="w-full text-xs text-muted-foreground">
+        {route.last_checked_at ? `Checked ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(route.last_checked_at))}` : "Not checked yet"}
+      </p>
     </div>
   );
 }

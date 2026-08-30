@@ -17,6 +17,7 @@ After changing SQLAlchemy models, create and review an Alembic revision before a
 
 - Vercel: deploy `frontend` as the root directory and set `FAREDELTA_API_URL` to the public backend URL.
 - Render or Railway: deploy `backend`, run `uv run alembic upgrade head` as a release command, and start with the Dockerfile or uvicorn command.
+- Scheduled refreshes: set a long random `TRACKED_ROUTE_JOB_TOKEN` on the backend and configure the platform scheduler to `POST /api/jobs/refresh-tracked-routes` with the matching `X-FareDelta-Job-Token` header.
 - Neon or Supabase: provide an asyncpg-compatible `DATABASE_URL`, including TLS parameters required by the chosen service.
 
 No external provider credential is required while the mock provider is active.
