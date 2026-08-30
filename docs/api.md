@@ -30,6 +30,8 @@ Airport codes are three letters; traveler count is 1–9; maximum stops is 0–2
 
 Validation failures return HTTP 422. Provider and persistence failures return stable HTTP 502/503 messages without internal details.
 
+The configured provider is returned in `providers` and on every normalized offer. Amadeus mode queries the sampled flexible-date grid and normalizes carrier dictionaries, outbound timing, round-trip segments, stop count, per-traveler price, and currency. It does not expose Amadeus credentials or claim that placeholder booking links are purchasable inventory.
+
 ## `GET /api/flights/history`
 
 Returns up to 30 saved lowest-fare observations for a route. Optional departure and return dates narrow the history to one date pair.

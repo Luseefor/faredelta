@@ -21,3 +21,16 @@ After changing SQLAlchemy models, create and review an Alembic revision before a
 - Neon or Supabase: provide an asyncpg-compatible `DATABASE_URL`, including TLS parameters required by the chosen service.
 
 No external provider credential is required while the mock provider is active.
+
+## Amadeus sandbox
+
+Create a Self-Service application in the [Amadeus developer portal](https://developers.amadeus.com/self-service/apis-docs), then set these backend-only values in `backend/.env`:
+
+```dotenv
+FLIGHT_PROVIDER=amadeus
+AMADEUS_CLIENT_ID=your-api-key
+AMADEUS_CLIENT_SECRET=your-api-secret
+AMADEUS_BASE_URL=https://test.api.amadeus.com
+```
+
+Restart FastAPI after changing the provider. Never add real credentials to `.env.example`, Git, frontend variables, or browser code. Set `FLIGHT_PROVIDER=mock` to return to deterministic local results.

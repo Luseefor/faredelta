@@ -1,10 +1,11 @@
 import hashlib
 import random
 import uuid
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 
 from app.providers.base import FlightProvider
+from app.providers.sampling import sample_dates
 from app.schemas.flights import (
     Airline,
     Airport,
@@ -22,14 +23,6 @@ AIRLINES = (
 )
 
 
-def _sample_dates(start: date, end: date, count: int = 3) -> list[date]:
-    days = (end - start).days
-    if days <= 0:
-        return [start]
-    offsets = sorted({round(index * days / (count - 1)) for index in range(count)})
-    return [start + timedelta(days=offset) for offset in offsets]
-
-
 class MockFlightProvider(FlightProvider):
     def get_provider_name(self) -> str:
         return "FareDelta Mock"
@@ -38,8 +31,8 @@ class MockFlightProvider(FlightProvider):
         seed_material = request.model_dump_json()
         seed = int(hashlib.sha256(seed_material.encode()).hexdigest()[:16], 16)
         randomizer = random.Random(seed)
-        departures = _sample_dates(request.earliest_departure_date, request.latest_departure_date)
-        returns = _sample_dates(request.earliest_return_date, request.latest_return_date)
+        departures = sample_dates(request.earliest_departure_date, request.latest_departure_date)
+        returns = sample_dates(request.earliest_return_date, request.latest_return_date)
         retrieved_at = datetime.now(UTC)
         offers: list[FlightOffer] = []
 
