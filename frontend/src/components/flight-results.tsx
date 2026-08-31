@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { AnimeStagger } from "@/components/anime-stagger";
 import { FlightOfferCard } from "@/components/flight-offer-card";
 import { FlexibleDateMatrix } from "@/components/flexible-date-matrix";
 import { FareHistoryChart } from "@/components/fare-history-chart";
@@ -181,11 +182,13 @@ export function FlightResults({
           </Select>
         </div>
       </div>
-      <div className="space-y-4">
+      <AnimeStagger sequenceKey={`${sortMode}:${selectedPair ?? "all"}:${offers.length}`}>
         {offers.map((offer) => (
-          <FlightOfferCard key={offer.id} offer={offer} />
+          <div key={offer.id} data-stagger-item>
+            <FlightOfferCard offer={offer} />
+          </div>
         ))}
-      </div>
+      </AnimeStagger>
     </div>
   );
 }
