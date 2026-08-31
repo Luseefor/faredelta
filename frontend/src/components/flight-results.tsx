@@ -134,11 +134,18 @@ export function FlightResults({
     );
   }
   if (!data || data.offers.length === 0) {
+    const usesTravelpayouts = data?.providers.some((provider) =>
+      provider.includes("Travelpayouts"),
+    );
     return (
       <ResultState
         kind="empty"
-        title="No flights found"
-        message="Try a wider date window, another airport, or allow an additional stop."
+        title={usesTravelpayouts ? "No observed fares for these dates" : "No flights found"}
+        message={
+          usesTravelpayouts
+            ? "Travelpayouts' free fare feed has no matching cached itinerary. It covers economy fares and trips up to 30 days; adjust the dates or shorten the trip. No mock prices were substituted."
+            : "Try a wider date window, another airport, or allow an additional stop."
+        }
       />
     );
   }
