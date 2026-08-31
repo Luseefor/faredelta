@@ -90,7 +90,7 @@ export function TrackedRoutesDashboard() {
               <div><p className="text-xs text-muted-foreground">Travelers · cabin</p><p className="mt-1 font-medium">{route.travelers} · {route.cabin_class.replace("_", " ")}</p></div>
               <div><p className="text-xs text-muted-foreground">Stops</p><p className="mt-1 font-medium">Up to {route.maximum_stops}</p></div>
             </div>
-            <Button asChild className="w-full"><Link href={trackedRouteSearchHref(route)}>Check latest mock fares</Link></Button>
+            <Button asChild className="w-full"><Link href={trackedRouteSearchHref(route)}>Check latest fares</Link></Button>
           </CardContent>
         </Card>
       ))}

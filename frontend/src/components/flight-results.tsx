@@ -140,10 +140,10 @@ export function FlightResults({
     return (
       <ResultState
         kind="empty"
-        title={usesTravelpayouts ? "No observed fares for these dates" : "No flights found"}
+        title={usesTravelpayouts ? "No fares available for these dates" : "No flights found"}
         message={
           usesTravelpayouts
-            ? "Travelpayouts' free fare feed has no matching cached itinerary. It covers economy fares and trips up to 30 days; adjust the dates or shorten the trip. No mock prices were substituted."
+            ? "We couldn't find a matching fare within this date window. Try dates that keep the trip within 30 days, choose another route, or check again later."
             : "Try a wider date window, another airport, or allow an additional stop."
         }
       />

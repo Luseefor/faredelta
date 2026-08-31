@@ -77,7 +77,7 @@ export function FlightSearchForm() {
             <SelectItem value="0">Nonstop only</SelectItem><SelectItem value="1">Up to 1 stop</SelectItem><SelectItem value="2">Up to 2 stops</SelectItem>
           </SelectField>
           </div>
-          <p className="self-center text-[11px] leading-5 text-[#102f35]/48 sm:col-span-3 lg:col-span-3">Recently observed, provider test, and mock fares are always labeled.</p>
+          <p className="self-center text-[11px] leading-5 text-[#102f35]/48 sm:col-span-3 lg:col-span-3">Fare availability and pricing are provided by connected travel data partners.</p>
           <Button type="submit" size="lg" className="h-full min-h-14 rounded-2xl bg-[#f2c94c] px-5 font-bold text-[#102f35] shadow-none hover:bg-[#e8bc37] sm:col-span-3 lg:col-span-3">
             <Search className="size-4" aria-hidden /> Search flexible dates <ArrowRight className="size-4" aria-hidden />
           </Button>
