@@ -116,3 +116,27 @@ async def test_search_http_flow_persists_all_snapshots() -> None:
     finally:
         app.dependency_overrides.clear()
         await engine.dispose()
+
+
+async def test_health_reports_missing_database_schema() -> None:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def override_session() -> AsyncIterator[AsyncSession]:
+        async with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_session
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/health")
+
+        assert response.status_code == 503
+        assert response.json() == {
+            "status": "unavailable",
+            "service": "faredelta-api",
+            "database": "unavailable",
+        }
+    finally:
+        app.dependency_overrides.clear()
+        await engine.dispose()
