@@ -30,7 +30,7 @@ Airport codes are three letters; traveler count is 1–9; maximum stops is 0–2
 
 Validation failures return HTTP 422. Provider and persistence failures return stable HTTP 502/503 messages without internal details.
 
-The configured provider is returned in `providers` and on every normalized offer. Duffel mode queries the sampled flexible-date grid and normalizes operating carriers, outbound timing, round-trip segments, stop count, per-traveler price, and currency. It does not expose Duffel credentials or enable purchasing; test-mode schedules and prices are explicitly non-production data.
+The provider that actually produced the offers is returned in `providers` and on every normalized offer. Duffel mode queries the sampled flexible-date grid and normalizes operating carriers, outbound timing, round-trip segments, stop count, per-traveler price, and currency. Travelpayouts mode normalizes recently observed economy fares from its free Data API and labels them as cached observations rather than live inventory. Neither integration exposes credentials or enables purchasing.
 
 ## `GET /api/flights/history`
 
@@ -40,7 +40,7 @@ Returns up to 30 saved lowest-fare observations for a route. Optional departure 
 /api/flights/history?origin=ORD&destination=LAX&departure_date=2026-10-10&return_date=2026-10-18
 ```
 
-The response includes the current, lowest, and highest saved prices plus timestamped chart points. Version 1 history comes from mock-provider searches and is clearly labeled as early data in the interface.
+The response includes the current, lowest, and highest saved prices plus timestamped chart points. Version 1 history can contain mock, test, or recently observed provider searches and is clearly labeled as early data in the interface.
 
 ## Tracked routes
 

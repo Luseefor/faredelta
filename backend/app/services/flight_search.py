@@ -17,7 +17,8 @@ class FlightSearchService:
         retrieved_at = max((offer.retrieved_at for offer in offers), default=datetime.now(UTC))
         return FlightSearchResponse(
             search_id=search_id,
-            providers=[self.provider.get_provider_name()],
+            providers=list(dict.fromkeys(offer.provider for offer in offers))
+            or [self.provider.get_provider_name()],
             result_count=len(offers),
             retrieved_at=retrieved_at,
             offers=offers,

@@ -24,3 +24,23 @@ class UnavailableFlightProvider(FlightProvider):
 
     def get_provider_name(self) -> str:
         return self.provider_name
+
+
+class FallbackFlightProvider(FlightProvider):
+    """Use a secondary provider when the preferred source fails or has no coverage."""
+
+    def __init__(self, primary: FlightProvider, fallback: FlightProvider) -> None:
+        self.primary = primary
+        self.fallback = fallback
+
+    async def search_flights(self, request: FlightSearchRequest) -> list[FlightOffer]:
+        try:
+            offers = await self.primary.search_flights(request)
+        except FlightProviderError:
+            offers = []
+        return offers or await self.fallback.search_flights(request)
+
+    def get_provider_name(self) -> str:
+        return (
+            f"{self.primary.get_provider_name()} with {self.fallback.get_provider_name()} fallback"
+        )
