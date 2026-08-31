@@ -2,6 +2,13 @@
 
 FareDelta is a provider-neutral flight search and airfare-intelligence foundation. Version 1 searches flexible round-trip date windows through a deterministic mock provider, compares date pairs in a fare matrix, visualizes saved PostgreSQL price history, and provides a refreshable tracked-routes watchlist with in-app price movement alerts.
 
+## Live deployment
+
+- Web application: https://faredelta.vercel.app
+- API health: https://backend-production-2047.up.railway.app/health
+
+The frontend runs on Vercel. FastAPI and its managed PostgreSQL database run on Railway. Provider and database credentials are stored only in platform environment variables.
+
 The backend includes optional Duffel Flights and Travelpayouts Data API adapters. Automatic mode uses any configured external source and safely falls back to deterministic mock offers, so no external credential is required for local development.
 
 ## Quick start
