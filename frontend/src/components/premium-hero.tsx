@@ -43,7 +43,7 @@ export function PremiumHero() {
   }, [reduceMotion]);
 
   return (
-    <div ref={root} className="grid gap-10 pb-32 pt-16 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:pb-44 lg:pt-24">
+    <div ref={root} className="grid gap-9 pb-24 pt-12 lg:grid-cols-[1.06fr_.94fr] lg:items-center lg:gap-16 lg:pb-32 lg:pt-16">
       <div className="max-w-3xl">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#f2c94c] backdrop-blur-sm">
           <Sparkles className="size-3.5" aria-hidden />
@@ -83,7 +83,7 @@ export function PremiumHero() {
         <p className="text-pretty text-lg leading-8 text-white/70 sm:text-xl">
           Search a flexible travel window and compare clean, normalized flight options without opening twelve tabs.
         </p>
-        <div className="relative mt-8 overflow-hidden rounded-3xl border border-white/12 bg-white/[.065] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,.65)] backdrop-blur-xl sm:p-6">
+        <div className="relative mt-7 overflow-hidden rounded-[1.4rem] border border-white/12 bg-white/[.065] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,.65)] backdrop-blur-xl sm:p-6">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
             <span>Live search model</span>
             <span className="text-[#f2c94c]">Flexible ± 3 days</span>
@@ -104,7 +104,7 @@ export function PremiumHero() {
             <FareChip label="Best date" value="Oct 12" />
           </div>
         </div>
-        <div className="mt-7 flex flex-wrap items-center gap-3 text-xs text-white/50 sm:gap-5 sm:text-sm">
+        <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-white/50 sm:gap-5">
           <span>Flexible dates</span><span className="size-1 rounded-full bg-[#f2c94c]" /><span>Provider neutral</span><span className="size-1 rounded-full bg-[#f2c94c]" /><span>Price history ready</span>
         </div>
       </div>

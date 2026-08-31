@@ -47,13 +47,13 @@ export function AirportCombobox({ name, label, placeholder }: { name: string; la
   }
 
   return (
-    <div className="rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-4 transition-colors focus-within:border-[#1b6566]">
-      <Label id={`${name}-label`} className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#102f35]/50"><MapPin className="size-3.5 text-[#1b6566]" aria-hidden />{label}</Label>
+    <div className="h-full rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-3.5 transition-colors focus-within:border-[#1b6566] focus-within:bg-white">
+      <Label id={`${name}-label`} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#102f35]/55"><MapPin className="size-3.5 text-[#1b6566]" aria-hidden />{label}</Label>
       <input type="hidden" name={name} value={selected?.code ?? ""} />
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button type="button" variant="ghost" role="combobox" aria-expanded={open} aria-labelledby={`${name}-label ${name}-value`} className="mt-1 h-auto w-full justify-between px-0 py-0 text-left hover:bg-transparent">
-            <span id={`${name}-value`} className="min-w-0">{selected ? <><span className="block text-2xl font-semibold tracking-[-0.03em] text-[#102f35]">{selected.city} <span className="text-[#1b6566]">{selected.code}</span></span><span className="mt-0.5 block truncate text-xs font-normal text-[#102f35]/45">{selected.name} · {selected.country}</span></> : <span className="text-2xl font-semibold tracking-[-0.03em] text-[#102f35]/20">{placeholder}</span>}</span>
+            <span id={`${name}-value`} className="min-w-0">{selected ? <><span className="block text-lg font-semibold tracking-[-0.025em] text-[#102f35]">{selected.city} <span className="text-[#1b6566]">{selected.code}</span></span><span className="mt-0.5 block truncate text-[10px] font-normal text-[#102f35]/50">{selected.name} · {selected.country}</span></> : <span className="text-lg font-semibold tracking-[-0.025em] text-[#102f35]/38">{placeholder}</span>}</span>
             <ChevronsUpDown className="ml-3 size-4 shrink-0 text-[#102f35]/35" aria-hidden />
           </Button>
         </PopoverTrigger>
@@ -78,7 +78,7 @@ export function AirportCombobox({ name, label, placeholder }: { name: string; la
           </Command>
         </PopoverContent>
       </Popover>
-      <p className={cn("mt-2 text-[11px] text-[#102f35]/38", selected && "sr-only")}>Search more than 9,000 airports worldwide</p>
+      <p className={cn("mt-1.5 text-[10px] text-[#102f35]/45", selected && "sr-only")}>9,000+ airports worldwide</p>
     </div>
   );
 }
