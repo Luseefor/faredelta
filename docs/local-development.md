@@ -20,7 +20,7 @@ After changing SQLAlchemy models, create and review an Alembic revision before a
 - Scheduled refreshes: set a long random `TRACKED_ROUTE_JOB_TOKEN` on the backend and configure the platform scheduler to `POST /api/jobs/refresh-tracked-routes` with the matching `X-FareDelta-Job-Token` header.
 - Neon or Supabase: provide an asyncpg-compatible `DATABASE_URL`, including TLS parameters required by the chosen service.
 
-No external provider credential is required in automatic or mock mode. With no tokens configured, automatic mode uses deterministic mock data.
+No external provider credential is required for local development. With no tokens configured and `MOCK_PROVIDER_ENABLED=true`, automatic mode uses deterministic sample data. Production should set `MOCK_PROVIDER_ENABLED=false`.
 
 ## Free recently observed fares
 
@@ -33,7 +33,7 @@ TRAVELPAYOUTS_BASE_URL=https://api.travelpayouts.com
 TRAVELPAYOUTS_MARKET=us
 ```
 
-The Data API returns fares observed by Aviasales users during the previous 48 hours. They are useful for price discovery and history, but they are not guaranteed live availability. FareDelta labels these results `Travelpayouts · recently observed`. This feed supports economy results; automatic mode falls back to mock data for other cabins, missing coverage, or temporary provider failures. Set `FLIGHT_PROVIDER=travelpayouts` to disable fallback and expose an empty/error state instead.
+The Data API returns fares observed by Aviasales users during the previous 48 hours. They are useful for price discovery and history, but they are not guaranteed live availability. FareDelta labels these results `Travelpayouts · recently observed`. This feed supports economy results and trips up to 30 days. Production exposes a clear empty or error state when coverage is unavailable.
 
 ## Duffel test mode
 

@@ -12,7 +12,7 @@ FareDelta is a flexible-date flight search and airfare-intelligence application.
 - Flexible departure and return date windows
 - Traveler, cabin, and stop filters
 - Recently observed Travelpayouts fares with explicit source labeling
-- Deterministic mock fallback when external coverage is unavailable
+- Deterministic local-development provider for offline work
 - Flexible-date fare matrix
 - Cheapest, fastest, and balanced sorting
 - PostgreSQL fare-history snapshots and route charts
@@ -29,7 +29,7 @@ Browser
     → FastAPI service (Railway)
       → provider abstraction
         → Travelpayouts
-        → mock fallback
+        → optional local-development fallback
       → SQLAlchemy repositories
         → PostgreSQL (Railway)
 ```
@@ -69,7 +69,7 @@ pnpm dev
 
 Open [localhost:3000](http://localhost:3000). Interactive API documentation is available at [localhost:8000/docs](http://localhost:8000/docs).
 
-External credentials are optional locally. With `FLIGHT_PROVIDER=auto`, FareDelta uses Travelpayouts when a server-side token is configured and falls back to mock offers when cached coverage is missing.
+External credentials are optional locally. With `FLIGHT_PROVIDER=auto`, FareDelta uses configured server-side providers. Keep `MOCK_PROVIDER_ENABLED=false` in production so unavailable provider coverage returns a clear empty or error state instead of sample fares.
 
 ## Verification
 
