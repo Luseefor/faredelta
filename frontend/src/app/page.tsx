@@ -9,8 +9,6 @@ export default function Home() {
     <main className="min-h-screen bg-[#f6f3ec] text-[#102a2f]">
       <section className="relative overflow-hidden bg-[#102f35] text-white">
         <div className="hero-grid absolute inset-0 opacity-25" aria-hidden />
-        <div className="absolute -right-36 top-32 size-[34rem] rounded-full border border-white/10" aria-hidden />
-        <div className="absolute -right-16 top-52 size-80 rounded-full border border-white/10" aria-hidden />
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <header className="flex h-20 items-center justify-between border-b border-white/10">

@@ -65,8 +65,6 @@ export function PremiumHero() {
               <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden bg-white/20">
                 <span data-route-line className="absolute inset-0 origin-left bg-[#f2c94c]/70" />
               </div>
-              <span className="absolute left-0 top-1/2 z-10 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/60 bg-[#102f35]" />
-              <span className="absolute right-0 top-1/2 z-10 size-2 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70" />
             </div>
             <Airport code="LAX" city="Los Angeles" align="right" />
           </div>
