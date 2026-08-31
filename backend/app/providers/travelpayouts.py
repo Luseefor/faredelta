@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import uuid
+from calendar import monthrange
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -38,6 +40,8 @@ _AIRLINE_NAMES = {
     "WN": "Southwest Airlines",
 }
 
+logger = logging.getLogger(__name__)
+
 
 class TravelpayoutsFlightProvider(FlightProvider):
     """Normalize recently observed Aviasales fares from Travelpayouts' free Data API."""
@@ -62,10 +66,28 @@ class TravelpayoutsFlightProvider(FlightProvider):
             return []
         try:
             month_pairs = _month_pairs(request)
-            payloads = await asyncio.gather(
+            if not month_pairs:
+                return []
+            results = await asyncio.gather(
                 *(self._search_period(request, departure_month, return_month)
-                  for departure_month, return_month in month_pairs)
+                  for departure_month, return_month in month_pairs),
+                return_exceptions=True,
             )
+            payloads = [result for result in results if isinstance(result, dict)]
+            failures = [result for result in results if isinstance(result, BaseException)]
+            if not payloads and failures:
+                first_failure = failures[0]
+                if isinstance(first_failure, FlightProviderError):
+                    raise first_failure
+                raise FlightProviderError(
+                    "Travelpayouts search could not be completed"
+                ) from first_failure
+            if failures:
+                logger.warning(
+                    "Travelpayouts returned partial coverage: %s of %s date periods failed",
+                    len(failures),
+                    len(results),
+                )
             offers = [
                 offer
                 for payload in payloads
@@ -235,4 +257,29 @@ def _month_pairs(request: FlightSearchRequest) -> list[tuple[str, str]]:
     return_months = _months_between(
         request.earliest_return_date, request.latest_return_date
     )
-    return [(departure, returning) for departure in departure_months for returning in return_months]
+    return [
+        (departure, returning)
+        for departure in departure_months
+        for returning in return_months
+        if _supports_trip_length(request, departure, returning)
+    ]
+
+
+def _supports_trip_length(
+    request: FlightSearchRequest, departure_month: str, return_month: str
+) -> bool:
+    """Return whether a month pair can contain a 1–30 day Travelpayouts itinerary."""
+    departure_first, departure_last = _month_bounds(departure_month)
+    return_first, return_last = _month_bounds(return_month)
+    departure_start = max(request.earliest_departure_date, departure_first)
+    departure_end = min(request.latest_departure_date, departure_last)
+    return_start = max(request.earliest_return_date, return_first)
+    return_end = min(request.latest_return_date, return_last)
+    earliest_eligible_departure = max(departure_start, return_start - timedelta(days=30))
+    latest_eligible_departure = min(departure_end, return_end - timedelta(days=1))
+    return earliest_eligible_departure <= latest_eligible_departure
+
+
+def _month_bounds(value: str) -> tuple[date, date]:
+    year, month = (int(part) for part in value.split("-"))
+    return date(year, month, 1), date(year, month, monthrange(year, month)[1])

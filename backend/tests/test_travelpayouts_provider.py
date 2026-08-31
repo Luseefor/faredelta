@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import httpx
 
-from app.providers.travelpayouts import TravelpayoutsFlightProvider
+from app.providers.travelpayouts import TravelpayoutsFlightProvider, _month_pairs
 from app.schemas.flights import CabinClass
 from tests.test_schemas import valid_request
 
@@ -73,3 +73,35 @@ async def test_travelpayouts_returns_no_cached_fares_for_unsupported_cabin() -> 
     await client.aclose()
 
     assert offers == []
+
+
+async def test_travelpayouts_keeps_successful_periods_when_another_period_fails() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.params["departure_at"] == "2026-10":
+            return httpx.Response(400, json={"error": "unsupported period"})
+        return httpx.Response(200, json={"success": True, "currency": "usd", "data": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = TravelpayoutsFlightProvider("free-token", client=client)
+    request = valid_request(
+        earliest_departure_date="2026-09-29",
+        latest_departure_date="2026-10-02",
+        earliest_return_date="2026-10-03",
+        latest_return_date="2026-10-05",
+    )
+
+    offers = await provider.search_flights(request)
+    await client.aclose()
+
+    assert offers == []
+
+
+def test_travelpayouts_skips_date_periods_without_a_trip_up_to_30_days() -> None:
+    request = valid_request(
+        earliest_departure_date="2026-08-02",
+        latest_departure_date="2026-09-04",
+        earliest_return_date="2026-10-19",
+        latest_return_date="2026-11-11",
+    )
+
+    assert _month_pairs(request) == []

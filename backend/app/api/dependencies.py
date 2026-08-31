@@ -35,16 +35,21 @@ def get_flight_provider() -> FlightProvider:
             )
         return _travelpayouts_provider(settings)
 
-    fallback: FlightProvider = (
-        MockFlightProvider()
-        if settings.mock_provider_enabled
-        else UnavailableFlightProvider("FareDelta", "No flight provider is configured")
-    )
+    configured_providers: list[FlightProvider] = []
     if settings.duffel_access_token is not None:
-        fallback = FallbackFlightProvider(_duffel_provider(settings), fallback)
+        configured_providers.append(_duffel_provider(settings))
     if settings.travelpayouts_access_token is not None:
-        fallback = FallbackFlightProvider(_travelpayouts_provider(settings), fallback)
-    return fallback
+        configured_providers.append(_travelpayouts_provider(settings))
+
+    if settings.mock_provider_enabled:
+        configured_providers.append(MockFlightProvider())
+    if not configured_providers:
+        return UnavailableFlightProvider("FareDelta", "No flight provider is configured")
+
+    provider = configured_providers[-1]
+    for primary in reversed(configured_providers[:-1]):
+        provider = FallbackFlightProvider(primary, provider)
+    return provider
 
 
 def _duffel_provider(settings: Settings) -> FlightProvider:
