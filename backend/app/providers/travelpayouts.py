@@ -9,7 +9,6 @@ import httpx
 
 from app.core.exceptions import FlightProviderError
 from app.providers.base import FlightProvider
-from app.providers.sampling import sample_date_pairs
 from app.schemas.flights import (
     Airline,
     Airport,
@@ -62,16 +61,10 @@ class TravelpayoutsFlightProvider(FlightProvider):
         if request.cabin_class is not CabinClass.economy:
             return []
         try:
+            month_pairs = _month_pairs(request)
             payloads = await asyncio.gather(
-                *(
-                    self._search_pair(request, departure_date, return_date)
-                    for departure_date, return_date in sample_date_pairs(
-                        request.earliest_departure_date,
-                        request.latest_departure_date,
-                        request.earliest_return_date,
-                        request.latest_return_date,
-                    )
-                )
+                *(self._search_period(request, departure_month, return_month)
+                  for departure_month, return_month in month_pairs)
             )
             offers = [
                 offer
@@ -91,26 +84,26 @@ class TravelpayoutsFlightProvider(FlightProvider):
         ) as exc:
             raise FlightProviderError("Travelpayouts search could not be completed") from exc
 
-    async def _search_pair(
+    async def _search_period(
         self,
         request: FlightSearchRequest,
-        departure_date: date,
-        return_date: date,
+        departure_month: str,
+        return_month: str,
     ) -> dict[str, Any]:
         response = await self.client.get(
             f"{self.base_url}/aviasales/v3/prices_for_dates",
             params={
                 "origin": request.origin,
                 "destination": request.destination,
-                "departure_at": departure_date.isoformat(),
-                "return_at": return_date.isoformat(),
+                "departure_at": departure_month,
+                "return_at": return_month,
                 "one_way": "false",
                 "direct": str(request.maximum_stops == 0).lower(),
                 "currency": "usd",
                 "market": self.market,
                 "sorting": "price",
                 "unique": "false",
-                "limit": 5,
+                "limit": 100,
                 "page": 1,
             },
             headers={
@@ -194,7 +187,9 @@ class TravelpayoutsFlightProvider(FlightProvider):
             arrival_time=arrival_time,
             duration_minutes=outbound_duration,
             stops=max(int(raw.get("transfers", 0)), int(raw.get("return_transfers", 0))),
-            price=Decimal(str(raw["price"])).quantize(Decimal("0.01")),
+            price=(Decimal(str(raw["price"])) * request.travelers).quantize(
+                Decimal("0.01")
+            ),
             currency=currency.upper(),
             cabin_class=request.cabin_class,
             booking_url=booking_url,
@@ -221,3 +216,23 @@ class TravelpayoutsFlightProvider(FlightProvider):
             ],
             return_date=return_time.date(),
         )
+
+
+def _months_between(start: date, end: date) -> list[str]:
+    months: list[str] = []
+    cursor = start.replace(day=1)
+    last = end.replace(day=1)
+    while cursor <= last:
+        months.append(cursor.strftime("%Y-%m"))
+        cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return months
+
+
+def _month_pairs(request: FlightSearchRequest) -> list[tuple[str, str]]:
+    departure_months = _months_between(
+        request.earliest_departure_date, request.latest_departure_date
+    )
+    return_months = _months_between(
+        request.earliest_return_date, request.latest_return_date
+    )
+    return [(departure, returning) for departure in departure_months for returning in return_months]

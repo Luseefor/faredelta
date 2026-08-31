@@ -7,7 +7,7 @@ from app.schemas.flights import CabinClass
 from tests.test_schemas import valid_request
 
 
-async def test_travelpayouts_provider_samples_dates_and_normalizes_cached_fares() -> None:
+async def test_travelpayouts_provider_queries_months_and_normalizes_cached_fares() -> None:
     search_calls = 0
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -17,8 +17,9 @@ async def test_travelpayouts_provider_samples_dates_and_normalizes_cached_fares(
         assert request.headers["X-Access-Token"] == "free-token"
         assert request.url.params["market"] == "us"
         assert request.url.params["one_way"] == "false"
-        departure_date = request.url.params["departure_at"]
-        return_date = request.url.params["return_at"]
+        assert request.url.params["departure_at"] == "2026-10"
+        assert request.url.params["return_at"] == "2026-10"
+        assert request.url.params["limit"] == "100"
         return httpx.Response(
             200,
             json={
@@ -33,8 +34,8 @@ async def test_travelpayouts_provider_samples_dates_and_normalizes_cached_fares(
                         "price": 219.45,
                         "airline": "UA",
                         "flight_number": "101",
-                        "departure_at": f"{departure_date}T08:00:00-05:00",
-                        "return_at": f"{return_date}T16:00:00-07:00",
+                        "departure_at": "2026-10-10T08:00:00-05:00",
+                        "return_at": "2026-10-16T16:00:00-07:00",
                         "transfers": 1,
                         "return_transfers": 0,
                         "duration_to": 255,
@@ -47,14 +48,14 @@ async def test_travelpayouts_provider_samples_dates_and_normalizes_cached_fares(
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     provider = TravelpayoutsFlightProvider("free-token", "https://travelpayouts.test", "us", client)
-    offers = await provider.search_flights(valid_request(maximum_stops=1))
+    offers = await provider.search_flights(valid_request(maximum_stops=1, travelers=2))
     await client.aclose()
 
-    assert search_calls == 9
-    assert len(offers) == 9
+    assert search_calls == 1
+    assert len(offers) == 1
     assert offers[0].provider == "Travelpayouts · recently observed"
     assert offers[0].airline.name == "United Airlines"
-    assert offers[0].price == Decimal("219.45")
+    assert offers[0].price == Decimal("438.90")
     assert offers[0].currency == "USD"
     assert offers[0].duration_minutes == 255
     assert offers[0].stops == 1
