@@ -157,11 +157,14 @@ export function FlightResults({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            {selectedPair ? `${offers.length} of ${data.result_count}` : data.result_count} mock offers
+            {selectedPair ? `${offers.length} of ${data.result_count}` : data.result_count} offers
           </p>
           <h2 className="text-xl font-semibold">
             {request.origin} to {request.destination}
           </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Source: {data.providers.join(", ")}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <TrackRouteButton request={request} />

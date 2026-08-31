@@ -12,6 +12,11 @@ export function FlightOfferCard({ offer }: { offer: FlightOffer }) {
   const departure = new Date(offer.departure_time); const arrival = new Date(offer.arrival_time);
   const price = new Intl.NumberFormat("en-US", { style: "currency", currency: offer.currency, maximumFractionDigits: 0 }).format(offer.price);
   const stopLabel = offer.stops === 0 ? "Nonstop" : `${offer.stops} stop${offer.stops > 1 ? "s" : ""}`;
+  const sourceLabel = offer.provider.includes("recently observed")
+    ? "Recently observed"
+    : offer.provider.includes("Mock")
+      ? "Mock fare"
+      : "Provider fare";
   return (
     <Card className="group overflow-hidden rounded-2xl border-[#102f35]/10 bg-white py-0 shadow-none transition-all hover:-translate-y-0.5 hover:border-[#1b6566]/35 hover:shadow-[0_16px_40px_-24px_rgba(16,47,53,.35)]">
       <CardContent className="p-0">
@@ -35,7 +40,7 @@ export function FlightOfferCard({ offer }: { offer: FlightOffer }) {
 
           <div className="flex items-center justify-between border-t border-[#102f35]/8 bg-[#f2c94c]/12 p-5 lg:block lg:border-t-0 lg:border-l lg:p-6 lg:text-right">
             <div><p className="text-3xl font-bold tracking-[-0.05em] text-[#102f35]">{price}</p><p className="mt-1 text-xs text-[#102f35]/45">per traveler · round trip</p></div>
-            <div className="mt-0 flex items-center gap-2 text-xs font-medium text-[#1b6566] lg:mt-8 lg:justify-end"><Sparkles className="size-3.5" aria-hidden />Mock fare</div>
+            <div className="mt-0 flex items-center gap-2 text-xs font-medium text-[#1b6566] lg:mt-8 lg:justify-end"><Sparkles className="size-3.5" aria-hidden />{sourceLabel}</div>
           </div>
         </div>
       </CardContent>

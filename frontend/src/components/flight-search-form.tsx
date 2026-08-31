@@ -71,7 +71,7 @@ export function FlightSearchForm() {
         {error ? <Alert variant="destructive" role="alert" className="mt-5"><AlertTitle>Check your search</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
 
         <div className="mt-6 flex flex-col gap-4 border-t border-[#102f35]/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-lg text-xs leading-5 text-[#102f35]/45">Mock fares are generated for this first release. No booking or payment information is collected.</p>
+          <p className="max-w-lg text-xs leading-5 text-[#102f35]/45">Results clearly identify whether fares are recently observed, provider test data, or generated mock data. No booking or payment information is collected.</p>
           <Button type="submit" size="lg" className="h-13 rounded-xl bg-[#f2c94c] px-7 font-bold text-[#102f35] shadow-none hover:bg-[#e8bc37]">
             <Search className="size-4" aria-hidden /> Search flexible dates <ArrowRight className="size-4" aria-hidden />
           </Button>
