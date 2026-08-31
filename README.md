@@ -1,29 +1,65 @@
 # FareDelta
 
-FareDelta is a provider-neutral flight search and airfare-intelligence foundation. Version 1 searches flexible round-trip date windows through a deterministic mock provider, compares date pairs in a fare matrix, visualizes saved PostgreSQL price history, and provides a refreshable tracked-routes watchlist with in-app price movement alerts.
+![FareDelta icon](frontend/src/app/icon.svg)
 
-## Live deployment
+FareDelta is a flexible-date flight search and airfare-intelligence application. It compares normalized fares across departure and return windows, saves observed prices, and turns repeated searches into useful route history.
 
-- Web application: https://faredelta.rijan.sh
-- API health: https://backend-production-2047.up.railway.app/health
+**Live:** [faredelta.rijan.sh](https://faredelta.rijan.sh)
 
-The frontend runs on Vercel. FastAPI and its managed PostgreSQL database run on Railway. Provider and database credentials are stored only in platform environment variables.
+## What works today
 
-The backend includes optional Duffel Flights and Travelpayouts Data API adapters. Automatic mode uses any configured external source and safely falls back to deterministic mock offers, so no external credential is required for local development.
+- Worldwide airport autocomplete with more than 9,000 active IATA airports
+- Flexible departure and return date windows
+- Traveler, cabin, and stop filters
+- Recently observed Travelpayouts fares with explicit source labeling
+- Deterministic mock fallback when external coverage is unavailable
+- Flexible-date fare matrix
+- Cheapest, fastest, and balanced sorting
+- PostgreSQL fare-history snapshots and route charts
+- Saved route tracking and manual price refreshes
+- Responsive homepage, search results, empty states, and error states
 
-## Quick start
+Travelpayouts results are cached observations, not guaranteed live inventory. FareDelta keeps provider adapters behind a shared interface so additional live-search sources can be added without changing the UI or internal offer model.
 
-Prerequisites: Docker, pnpm, Python 3.12+, and uv.
+## Architecture
+
+```text
+Browser
+  → Next.js route handlers (Vercel)
+    → FastAPI service (Railway)
+      → provider abstraction
+        → Travelpayouts
+        → mock fallback
+      → SQLAlchemy repositories
+        → PostgreSQL (Railway)
+```
+
+The browser never receives provider credentials or the private database URL. Next.js proxies API traffic through same-origin route handlers, while FastAPI owns validation, provider selection, normalization, and persistence.
+
+## Technology
+
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Motion, Anime.js
+- Backend: FastAPI, Pydantic, SQLAlchemy 2, Alembic, asyncpg
+- Database: PostgreSQL 17
+- Tooling: pnpm, uv, Docker Compose, Vitest, pytest, Ruff, mypy
+- Hosting: Vercel frontend; Railway API and PostgreSQL
+
+## Local development
+
+Requirements: Docker, pnpm, Python 3.12 or newer, and uv.
 
 ```bash
 docker compose up -d postgres
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
-cd backend && uv sync && uv run alembic upgrade head
+
+cd backend
+uv sync
+uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 ```
 
-In a second terminal:
+In another terminal:
 
 ```bash
 cd frontend
@@ -31,15 +67,31 @@ pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000`. API documentation is available at `http://localhost:8000/docs`.
+Open [localhost:3000](http://localhost:3000). Interactive API documentation is available at [localhost:8000/docs](http://localhost:8000/docs).
+
+External credentials are optional locally. With `FLIGHT_PROVIDER=auto`, FareDelta uses Travelpayouts when a server-side token is configured and falls back to mock offers when cached coverage is missing.
 
 ## Verification
 
 ```bash
-cd backend && uv run ruff check . && uv run mypy app && uv run pytest
-cd frontend && pnpm lint && pnpm test && pnpm build
+cd backend
+uv run ruff check .
+uv run mypy app
+uv run pytest
+
+cd ../frontend
+pnpm lint
+pnpm test
+pnpm build
 ```
 
-See [local development](docs/local-development.md), [architecture](docs/architecture.md), and [API](docs/api.md) for more detail.
+## Documentation
 
-Worldwide airport autocomplete is backed by a checked-in public-domain OurAirports snapshot. See [airport data](docs/airport-data.md) for coverage and refresh instructions.
+- [Architecture](docs/architecture.md)
+- [API reference](docs/api.md)
+- [Local development and deployment](docs/local-development.md)
+- [Airport catalog](docs/airport-data.md)
+
+## Current scope
+
+FareDelta does not yet provide booking guarantees, price alerts by email, baggage comparison, nearby-airport expansion, or BUY/WAIT predictions. The current release establishes the typed provider, persistence, history, tracking, and responsive presentation layers those features will build on.
