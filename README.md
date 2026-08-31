@@ -4,7 +4,7 @@ FareDelta is a provider-neutral flight search and airfare-intelligence foundatio
 
 ## Live deployment
 
-- Web application: https://faredelta.vercel.app
+- Web application: https://faredelta.rijan.sh
 - API health: https://backend-production-2047.up.railway.app/health
 
 The frontend runs on Vercel. FastAPI and its managed PostgreSQL database run on Railway. Provider and database credentials are stored only in platform environment variables.
