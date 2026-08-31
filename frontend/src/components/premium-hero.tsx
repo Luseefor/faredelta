@@ -50,7 +50,7 @@ export function PremiumHero() {
         </h1>
       </div>
 
-      <div className="max-w-xl pb-2 lg:justify-self-end">
+      <div className="w-full min-w-0 max-w-xl pb-2 lg:justify-self-end">
         <p className="text-pretty text-lg leading-8 text-white/70 sm:text-xl">
           Search a flexible travel window and compare clean, normalized flight options without opening twelve tabs.
         </p>
@@ -59,12 +59,14 @@ export function PremiumHero() {
             <span>Live search model</span>
             <span className="text-[#f2c94c]">Flexible ± 3 days</span>
           </div>
-          <div className="mt-5 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+          <div className="mt-5 grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-4">
             <Airport code="ORD" city="Chicago" />
-            <div className="relative h-px bg-white/20">
-              <span className="absolute -left-0.5 -top-1 size-2 rounded-full border border-white/60 bg-[#102f35]" />
-              <span data-route-line className="absolute inset-0 origin-left bg-[#f2c94c]/70" />
-              <span className="absolute -right-0.5 -top-1 size-2 rounded-full bg-white/70" />
+            <div className="relative mx-1 h-3 min-w-0" aria-hidden>
+              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden bg-white/20">
+                <span data-route-line className="absolute inset-0 origin-left bg-[#f2c94c]/70" />
+              </div>
+              <span className="absolute left-0 top-1/2 z-10 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/60 bg-[#102f35]" />
+              <span className="absolute right-0 top-1/2 z-10 size-2 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70" />
             </div>
             <Airport code="LAX" city="Los Angeles" align="right" />
           </div>
