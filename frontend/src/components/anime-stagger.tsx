@@ -12,11 +12,10 @@ export function AnimeStagger({ children, sequenceKey }: { children: ReactNode; s
     const scope = createScope({ root }).add(() => {
       animate("[data-stagger-item]", {
         opacity: [0, 1],
-        y: [22, 0],
-        scale: [0.985, 1],
-        delay: stagger(65),
-        duration: 620,
-        ease: "out(4)",
+        y: [10, 0],
+        delay: stagger(45),
+        duration: 380,
+        ease: "out(3)",
       });
     });
 

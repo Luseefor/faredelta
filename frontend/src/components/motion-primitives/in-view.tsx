@@ -1,53 +1,33 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
-import {
-  motion,
-  useInView,
-  type Transition,
-  type UseInViewOptions,
-  type Variant,
-} from "motion/react";
+import { motion, useReducedMotion, type Transition } from "motion/react";
+import type { ReactNode } from "react";
 
 export type InViewProps = {
   children: ReactNode;
-  variants?: {
-    hidden: Variant;
-    visible: Variant;
-  };
-  transition?: Transition;
-  viewOptions?: UseInViewOptions;
-  as?: React.ElementType;
+  className?: string;
+  delay?: number;
   once?: boolean;
 };
 
-const defaultVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
+const transition: Transition = {
+  duration: 0.4,
+  ease: [0.22, 1, 0.36, 1],
 };
 
-export function InView({
-  children,
-  variants = defaultVariants,
-  transition,
-  viewOptions,
-  as = "div",
-  once,
-}: InViewProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { ...viewOptions, once });
-
-  const MotionComponent = motion[as as keyof typeof motion] as typeof as;
+/** A small, one-time entrance intended for section-level hierarchy only. */
+export function InView({ children, className, delay = 0, once = true }: InViewProps) {
+  const prefersReducedMotion = useReducedMotion();
 
   return (
-    <MotionComponent
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={variants}
-      transition={transition}
+    <motion.div
+      className={className}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once, amount: 0.2 }}
+      transition={{ ...transition, delay }}
     >
       {children}
-    </MotionComponent>
+    </motion.div>
   );
 }

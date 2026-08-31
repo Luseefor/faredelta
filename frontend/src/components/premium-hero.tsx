@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { animate, createScope, stagger } from "animejs";
+import { createScope, createTimeline, stagger } from "animejs";
 import { Sparkles } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 
@@ -15,28 +15,14 @@ export function PremiumHero() {
     if (!root.current || reduceMotion) return;
 
     const scope = createScope({ root }).add(() => {
-      animate("[data-fare-chip]", {
-        opacity: [0, 1],
-        y: [18, 0],
-        delay: stagger(110, { start: 450 }),
-        duration: 700,
-        ease: "out(4)",
-      });
-      animate("[data-route-orb]", {
-        x: [0, 244],
-        scale: [0.8, 1, 0.8],
-        opacity: [0, 1, 0],
-        duration: 3600,
-        ease: "inOut(2)",
-        loop: true,
-      });
-      animate("[data-route-halo]", {
-        scale: [0.9, 1.2],
-        opacity: [0.3, 0],
-        duration: 1800,
-        ease: "out(3)",
-        loop: true,
-      });
+      createTimeline({ defaults: { ease: "out(3)" } })
+        .add("[data-route-line]", { scaleX: [0, 1], duration: 520 }, 180)
+        .add("[data-fare-chip]", {
+          opacity: [0, 1],
+          y: [8, 0],
+          delay: stagger(55),
+          duration: 360,
+        }, 360);
     });
 
     return () => scope.revert();
@@ -49,34 +35,19 @@ export function PremiumHero() {
           <Sparkles className="size-3.5" aria-hidden />
           Airfare intelligence, simplified
         </div>
-        {reduceMotion ? (
-          <h1 className="text-balance text-5xl font-semibold leading-[.98] tracking-[-0.055em] sm:text-7xl lg:text-[5.5rem]">
-            More dates.<span className="block text-[#f2c94c]">Better fares.</span>
-          </h1>
-        ) : (
-          <h1>
+        <h1>
             <TextEffect
-              as="span"
-              per="word"
-              preset="fade-in-blur"
-              speedReveal={1.35}
-              speedSegment={1.25}
               className="block text-balance text-5xl font-semibold leading-[.98] tracking-[-0.055em] sm:text-7xl lg:text-[5.5rem]"
             >
               More dates.
             </TextEffect>
             <TextEffect
-              as="span"
-              per="word"
-              preset="slide"
-              delay={0.22}
-              speedReveal={1.2}
+              delay={0.08}
               className="block text-balance text-5xl font-semibold leading-[.98] tracking-[-0.055em] text-[#f2c94c] sm:text-7xl lg:text-[5.5rem]"
             >
               Better fares.
             </TextEffect>
-          </h1>
-        )}
+        </h1>
       </div>
 
       <div className="max-w-xl pb-2 lg:justify-self-end">
@@ -92,8 +63,7 @@ export function PremiumHero() {
             <Airport code="ORD" city="Chicago" />
             <div className="relative h-px bg-white/20">
               <span className="absolute -left-0.5 -top-1 size-2 rounded-full border border-white/60 bg-[#102f35]" />
-              <span data-route-orb className="absolute -top-1.5 left-0 size-3 rounded-full bg-[#f2c94c] shadow-[0_0_18px_rgba(242,201,76,.9)]" />
-              <span data-route-halo className="absolute -top-2.5 left-60 size-5 rounded-full border border-[#f2c94c]/70" />
+              <span data-route-line className="absolute inset-0 origin-left bg-[#f2c94c]/70" />
               <span className="absolute -right-0.5 -top-1 size-2 rounded-full bg-white/70" />
             </div>
             <Airport code="LAX" city="Los Angeles" align="right" />
