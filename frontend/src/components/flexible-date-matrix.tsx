@@ -50,13 +50,14 @@ export function FlexibleDateMatrix({
           </Button>
         )}
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto rounded-xl border border-border/70">
-          <table className="w-full min-w-[560px] border-collapse text-sm">
+      <CardContent className="px-3 sm:px-4">
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">Swipe horizontally to compare dates →</p>
+        <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-border/70 [scrollbar-width:thin]">
+          <table className="w-full min-w-[540px] border-collapse text-sm">
             <caption className="sr-only">Lowest fares by departure and return date</caption>
             <thead>
               <tr className="bg-muted/45">
-                <th className="min-w-32 border-b border-r border-border/70 p-3 text-left font-medium text-muted-foreground">
+                <th className="sticky left-0 z-10 min-w-28 border-b border-r border-border/70 bg-muted p-3 text-left font-medium text-muted-foreground sm:min-w-32">
                   Depart ↓ / Return →
                 </th>
                 {matrix.returnDates.map((returnDate) => (
@@ -70,7 +71,7 @@ export function FlexibleDateMatrix({
             <tbody>
               {matrix.departureDates.map((departureDate) => (
                 <tr key={departureDate}>
-                  <th className="border-r border-t border-border/70 bg-muted/20 p-3 text-left font-medium first:border-t-0">
+                  <th className="sticky left-0 z-10 border-r border-t border-border/70 bg-card p-3 text-left font-medium first:border-t-0">
                     <span className="block text-xs text-muted-foreground">Depart</span>
                     {shortDate(departureDate)}
                   </th>

@@ -28,13 +28,13 @@ export function FlightOfferCard({ offer }: { offer: FlightOffer }) {
 
           <div className="p-5 sm:p-6 lg:px-8">
             <p className="mb-4 text-xs font-medium text-[#102f35]/45">{dateFormatter.format(departure)} departure</p>
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 sm:gap-7">
-              <div><p className="text-2xl font-semibold tracking-[-0.04em] text-[#102f35] sm:text-3xl">{timeFormatter.format(departure)}</p><p className="mt-1 text-sm font-bold text-[#102f35]">{offer.origin.code}</p></div>
+            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-7">
+              <div><p className="text-xl font-semibold tracking-[-0.04em] text-[#102f35] min-[360px]:text-2xl sm:text-3xl">{timeFormatter.format(departure)}</p><p className="mt-1 text-sm font-bold text-[#102f35]">{offer.origin.code}</p></div>
               <div className="min-w-0 text-center">
                 <div className="relative flex items-center"><span className="size-2 rounded-full border-2 border-[#1b6566] bg-white" /><span className="h-px flex-1 bg-[#102f35]/18" /><span className="flex size-7 items-center justify-center rounded-full bg-[#dce8e5] text-[#1b6566]"><Plane className="size-3.5 rotate-45" aria-hidden /></span><span className="h-px flex-1 bg-[#102f35]/18" /><span className="size-2 rounded-full bg-[#1b6566]" /></div>
-                <div className="mt-2 flex items-center justify-center gap-2 text-xs"><span className="font-semibold text-[#102f35]">{formatDuration(offer.duration_minutes)}</span><span className="text-[#102f35]/25">·</span><span className={offer.stops === 0 ? "font-semibold text-[#1b6566]" : "text-[#102f35]/55"}>{stopLabel}</span></div>
+                <div className="mt-2 flex items-center justify-center gap-1 whitespace-nowrap text-[11px] sm:gap-2 sm:text-xs"><span className="font-semibold text-[#102f35]">{formatDuration(offer.duration_minutes)}</span><span className="text-[#102f35]/25">·</span><span className={offer.stops === 0 ? "font-semibold text-[#1b6566]" : "text-[#102f35]/55"}>{stopLabel}</span></div>
               </div>
-              <div className="text-right"><p className="text-2xl font-semibold tracking-[-0.04em] text-[#102f35] sm:text-3xl">{timeFormatter.format(arrival)}</p><p className="mt-1 text-sm font-bold text-[#102f35]">{offer.destination.code}</p></div>
+              <div className="text-right"><p className="text-xl font-semibold tracking-[-0.04em] text-[#102f35] min-[360px]:text-2xl sm:text-3xl">{timeFormatter.format(arrival)}</p><p className="mt-1 text-sm font-bold text-[#102f35]">{offer.destination.code}</p></div>
             </div>
           </div>
 

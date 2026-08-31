@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFareHistory } from "@/lib/api/history";
-import { buildFareTrend } from "@/lib/fare-history";
+import { buildFareTrend, collapseFareHistory } from "@/lib/fare-history";
 import type { FareHistoryResponse } from "@/lib/types";
 
 const CHART_WIDTH = 700;
@@ -62,7 +62,11 @@ export function FareHistoryChart({
   const loading = result?.key !== requestKey;
   const unavailable = result?.key === requestKey && result.unavailable;
   const history = result?.key === requestKey ? result.history : null;
-  const trend = useMemo(() => buildFareTrend(history?.points ?? [], CHART_WIDTH, CHART_HEIGHT), [history]);
+  const trend = useMemo(
+    () => buildFareTrend(collapseFareHistory(history?.points ?? []), CHART_WIDTH, CHART_HEIGHT),
+    [history],
+  );
+  const markerPoints = trend.length <= 12 ? trend : trend.slice(-1);
   const line = trend.map((point) => `${point.x},${point.y}`).join(" ");
   const area = trend.length > 1 ? `0,${CHART_HEIGHT} ${line} ${CHART_WIDTH},${CHART_HEIGHT}` : "";
 
@@ -84,7 +88,7 @@ export function FareHistoryChart({
           <Database className="size-3.5" /> PostgreSQL snapshots
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-4">
         {loading ? (
           <Skeleton className="h-64 w-full" />
         ) : unavailable ? (
@@ -99,18 +103,18 @@ export function FareHistoryChart({
           </div>
         ) : (
           <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <HistoryStat label="Latest" value={money(history.current_price, history.currency)} />
               <HistoryStat label="Lowest" value={money(history.lowest_price, history.currency)} accent />
               <HistoryStat label="Observations" value={String(history.point_count)} />
             </div>
-            <div className="relative overflow-hidden rounded-xl border border-border/70 bg-muted/15 px-4 pb-3 pt-5">
+            <div className="relative overflow-hidden rounded-xl border border-border/70 bg-muted/15 px-3 pb-3 pt-4 sm:px-4 sm:pt-5">
               <div className="pointer-events-none absolute inset-x-4 top-1/2 border-t border-dashed border-border/70" />
               <svg
                 viewBox={`-8 -8 ${CHART_WIDTH + 16} ${CHART_HEIGHT + 16}`}
                 role="img"
                 aria-label={`Fare history from ${money(history.lowest_price, history.currency)} to ${money(history.highest_price, history.currency)}`}
-                className="relative h-44 w-full overflow-visible"
+                className="relative h-36 w-full overflow-visible sm:h-44"
                 preserveAspectRatio="none"
               >
                 {area ? <polygon points={area} className="fill-primary/10" /> : null}
@@ -125,7 +129,7 @@ export function FareHistoryChart({
                     strokeLinejoin="round"
                   />
                 ) : null}
-                {trend.map((point) => (
+                {markerPoints.map((point) => (
                   <circle
                     key={point.retrieved_at}
                     cx={point.x}
@@ -165,9 +169,9 @@ export function FareHistoryChart({
 
 function HistoryStat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-lg border border-border/60 bg-background/45 p-3">
+    <div className="min-w-0 rounded-lg border border-border/60 bg-background/45 p-2.5 sm:p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={accent ? "mt-1 font-semibold text-primary" : "mt-1 font-semibold"}>{value}</p>
+      <p className={accent ? "mt-1 truncate font-semibold text-primary" : "mt-1 truncate font-semibold"}>{value}</p>
     </div>
   );
 }
