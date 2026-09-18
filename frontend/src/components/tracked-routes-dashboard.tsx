@@ -204,7 +204,7 @@ export function TrackedRoutesDashboard() {
       </div>
 
       {selected.size > 0 ? (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/85 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/85 px-4 py-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
           <p className="text-sm font-medium">{selected.size} selected</p>
           <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={onBulkDelete}>
             {bulkBusy ? <LoaderCircle className="animate-spin" /> : <Trash2 />}

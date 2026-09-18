@@ -89,7 +89,7 @@ export function FlexibleDateMatrix({
                             aria-label={`${shortDate(departureDate)} departure, ${shortDate(returnDate)} return, ${price(cell.lowestPrice, cell.currency)}`}
                             onClick={() => onSelectPair(selected ? null : key)}
                             className={cn(
-                              "relative min-h-16 w-full rounded-lg px-3 py-2 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                              "relative min-h-16 w-full rounded-lg px-3 py-2 font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-safe:active:scale-[0.97]",
                               "hover:bg-primary/10 hover:text-primary",
                               cheapest && "bg-primary/10 text-primary",
                               selected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",

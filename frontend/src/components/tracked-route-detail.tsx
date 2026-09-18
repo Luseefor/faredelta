@@ -227,7 +227,7 @@ export function TrackedRouteDetail({ id }: { id: string }) {
           ) : null}
 
           {editing ? (
-            <form onSubmit={onSave} className="space-y-4 rounded-xl border border-border/60 p-4">
+            <form onSubmit={onSave} className="space-y-4 rounded-xl border border-border/60 p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-150">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label htmlFor="dep-from">Departure from</Label><Input id="dep-from" type="date" required value={form.earliest_departure_date} onChange={(event) => setForm({ ...form, earliest_departure_date: event.target.value })} /></div>
                 <div className="space-y-1.5"><Label htmlFor="dep-to">Departure to</Label><Input id="dep-to" type="date" required value={form.latest_departure_date} onChange={(event) => setForm({ ...form, latest_departure_date: event.target.value })} /></div>

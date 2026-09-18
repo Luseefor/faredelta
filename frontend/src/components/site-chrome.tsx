@@ -42,11 +42,11 @@ export function SiteFooter() {
           FareDelta
         </p>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[#102f35]/65" aria-label="Footer">
-          <Link href="/" className="hover:text-[#102f35]">Search</Link>
-          <Link href="/explore" className="hover:text-[#102f35]">Explore fares</Link>
-          <Link href="/tracked" className="hover:text-[#102f35]">Tracked routes</Link>
-          <Link href="/alerts" className="hover:text-[#102f35]">Price alerts</Link>
-          <Link href="/settings" className="hover:text-[#102f35]">Settings</Link>
+          <Link href="/" className="transition-colors hover:text-[#102f35]">Search</Link>
+          <Link href="/explore" className="transition-colors hover:text-[#102f35]">Explore fares</Link>
+          <Link href="/tracked" className="transition-colors hover:text-[#102f35]">Tracked routes</Link>
+          <Link href="/alerts" className="transition-colors hover:text-[#102f35]">Price alerts</Link>
+          <Link href="/settings" className="transition-colors hover:text-[#102f35]">Settings</Link>
         </nav>
         <p className="text-xs text-[#102f35]/50">Observed fares, not booking guarantees.</p>
       </div>

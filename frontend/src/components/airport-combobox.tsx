@@ -71,7 +71,7 @@ export function AirportCombobox({ name, label, placeholder, defaultCode }: { nam
         <PopoverTrigger asChild>
           <Button type="button" variant="ghost" role="combobox" aria-expanded={open} aria-labelledby={`${name}-label ${name}-value`} className="mt-1 h-auto w-full justify-between px-0 py-0 text-left hover:bg-transparent">
             <span id={`${name}-value`} className="min-w-0">{selected ? <><span className="block text-lg font-semibold tracking-[-0.025em] text-[#102f35]">{selected.city} <span className="text-[#1b6566]">{selected.code}</span></span><span className="mt-0.5 block truncate text-[10px] font-normal text-[#102f35]/50">{selected.name} · {selected.country}</span></> : <span className="text-lg font-semibold tracking-[-0.025em] text-[#102f35]/38">{placeholder}</span>}</span>
-            <ChevronsUpDown className="ml-3 size-4 shrink-0 text-[#102f35]/35" aria-hidden />
+            <ChevronsUpDown className={cn("ml-3 size-4 shrink-0 text-[#102f35]/35 transition-transform duration-200", open && "rotate-180")} aria-hidden />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[min(30rem,calc(100vw-2.5rem))] p-1">
