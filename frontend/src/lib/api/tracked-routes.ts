@@ -1,4 +1,4 @@
-import type { FlightSearchRequest, TrackedRoute } from "@/lib/types";
+import type { FlightSearchRequest, TrackedRoute, TrackedRouteUpdate } from "@/lib/types";
 
 async function responseOrError<T>(response: Response): Promise<T> {
   if (response.status === 204) return undefined as T;
@@ -9,6 +9,20 @@ async function responseOrError<T>(response: Response): Promise<T> {
 
 export async function listTrackedRoutes(signal?: AbortSignal) {
   return responseOrError<TrackedRoute[]>(await fetch("/api/tracked-routes", { signal }));
+}
+
+export async function getTrackedRoute(id: string, signal?: AbortSignal) {
+  return responseOrError<TrackedRoute>(await fetch(`/api/tracked-routes/${id}`, { signal }));
+}
+
+export async function updateTrackedRoute(id: string, update: TrackedRouteUpdate) {
+  return responseOrError<TrackedRoute>(
+    await fetch(`/api/tracked-routes/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    }),
+  );
 }
 
 export async function trackRoute(request: FlightSearchRequest) {

@@ -18,4 +18,4 @@ The local-development provider is deterministic for the same request criteria. `
 
 Travelpayouts results are cached fares observed within the previous 48 hours, not live availability. The adapter therefore uses the provider label `Travelpayouts · recently observed`, supports economy searches only, and filters returned dates and stop counts before persistence. Duffel test results remain explicitly non-production inventory.
 
-PostgreSQL contains future-facing `users` and `tracked_routes` tables alongside currently used `flight_searches`, `flight_offers`, and `fare_history` tables. Anonymous Version 1 records have a nullable user relationship.
+PostgreSQL `users` rows are keyed to Clerk identities (`clerk_user_id`) and provisioned on first verified request; the backend never sees passwords. Tracked routes carry either a `user_id` (signed-in owner) or an `anonymous_id` (browser cookie); signing in claims the anonymous routes into the account with duplicate folding.

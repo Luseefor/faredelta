@@ -1,18 +1,25 @@
+import uuid
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import clerk_auth
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
 from app.providers.base import FallbackFlightProvider, FlightProvider, UnavailableFlightProvider
 from app.providers.duffel import DuffelFlightProvider
 from app.providers.mock import MockFlightProvider
 from app.providers.travelpayouts import TravelpayoutsFlightProvider
+from app.repositories.alerts import NotificationRepository, PriceAlertRepository
 from app.repositories.fare_history import FareHistoryRepository
 from app.repositories.flight_searches import FlightSearchRepository
 from app.repositories.tracked_routes import TrackedRouteRepository
+from app.repositories.users import UserRepository
+from app.services.alerts import AlertService
+from app.services.auth import AuthService
+from app.services.explore import ExploreService
 from app.services.fare_history import FareHistoryService
 from app.services.flight_search import FlightSearchService
 from app.services.tracked_route_refresh import TrackedRouteRefreshService
@@ -72,6 +79,63 @@ def _travelpayouts_provider(settings: Settings) -> FlightProvider:
 SessionDependency = Annotated[AsyncSession, Depends(get_session)]
 ProviderDependency = Annotated[FlightProvider, Depends(get_flight_provider)]
 
+async def get_current_user_id_optional(
+    session: SessionDependency, request: Request
+) -> uuid.UUID | None:
+    clerk_user_id = await clerk_auth.verify_clerk_request(request)
+    if clerk_user_id is None:
+        return None
+    users = UserRepository(session)
+    user = await users.get_by_clerk_id(clerk_user_id)
+    if user is not None:
+        return user.id
+    provisioned = await AuthService(users).get_or_provision(clerk_user_id)
+    return provisioned.id if provisioned is not None else None
+
+
+CurrentUserIdOptional = Annotated[uuid.UUID | None, Depends(get_current_user_id_optional)]
+
+
+def get_auth_service(session: SessionDependency) -> AuthService:
+    return AuthService(UserRepository(session))
+
+
+AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_explore_service() -> ExploreService:
+    settings = get_settings()
+    return ExploreService(
+        access_token=settings.travelpayouts_access_token.get_secret_value()
+        if settings.travelpayouts_access_token is not None
+        else None,
+        base_url=settings.travelpayouts_base_url,
+        market=settings.travelpayouts_market,
+    )
+
+
+ExploreServiceDependency = Annotated[ExploreService, Depends(get_explore_service)]
+
+
+def get_alert_service(session: SessionDependency) -> AlertService:
+    return AlertService(
+        PriceAlertRepository(session),
+        NotificationRepository(session),
+        TrackedRouteRepository(session),
+    )
+
+
+AlertServiceDependency = Annotated[AlertService, Depends(get_alert_service)]
+
+
+def get_notification_repository(session: SessionDependency) -> NotificationRepository:
+    return NotificationRepository(session)
+
+
+NotificationRepositoryDependency = Annotated[
+    NotificationRepository, Depends(get_notification_repository)
+]
+
 
 def get_flight_search_service(
     session: SessionDependency, provider: ProviderDependency
@@ -100,7 +164,12 @@ def get_tracked_route_refresh_service(
     session: SessionDependency, provider: ProviderDependency
 ) -> TrackedRouteRefreshService:
     return TrackedRouteRefreshService(
-        provider, TrackedRouteRepository(session), FlightSearchRepository(session)
+        provider,
+        TrackedRouteRepository(session),
+        FlightSearchRepository(session),
+        PriceAlertRepository(session),
+        NotificationRepository(session),
+        UserRepository(session),
     )
 
 

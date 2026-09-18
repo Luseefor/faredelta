@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
 
 import { attachAnonymousCookie, getAnonymousSession } from "@/lib/server/anonymous-session";
+import { getSessionToken } from "@/lib/server/session";
 
 const apiUrl = process.env.FAREDELTA_API_URL ?? "http://localhost:8000";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getAnonymousSession();
+  const token = await getSessionToken();
   try {
     const response = await fetch(`${apiUrl}/api/tracked-routes/${id}/refresh`, {
       method: "POST",
-      headers: { "X-FareDelta-Anonymous-ID": session.id },
+      headers: {
+        "X-FareDelta-Anonymous-ID": session.id,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       cache: "no-store",
     });
     const result = NextResponse.json(await response.json(), { status: response.status });
