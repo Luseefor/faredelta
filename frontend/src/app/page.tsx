@@ -1,30 +1,22 @@
-import Link from "next/link";
-import { ArrowUpRight, BarChart3, Bell, CalendarRange, Plane, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BarChart3, CalendarRange, ShieldCheck } from "lucide-react";
 
 import { FlightSearchForm } from "@/components/flight-search-form";
 import { PremiumHero } from "@/components/premium-hero";
+import { RecentSearches } from "@/components/recent-searches";
+import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f6f3ec] text-[#102a2f]">
+      <SiteHeader
+        actions={
+          <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 sm:inline">Private beta</span>
+        }
+      />
       <section className="relative overflow-hidden bg-[#102f35] text-white">
         <div className="hero-grid absolute inset-0 opacity-25" aria-hidden />
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-          <header className="flex h-20 items-center justify-between border-b border-white/10">
-            <Link href="/" className="flex items-center gap-3" aria-label="FareDelta home">
-              <span className="flex size-9 items-center justify-center rounded-full bg-[#f2c94c] text-[#102f35]">
-                <Plane className="size-4 -rotate-12" strokeWidth={2.5} aria-hidden />
-              </span>
-              <span className="text-xl font-semibold tracking-[-0.03em]">FareDelta</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/tracked" className="inline-flex items-center gap-2 text-sm text-white/75 hover:text-white"><Bell className="size-4" />Tracked routes</Link>
-              <span className="hidden text-sm text-white/60 lg:inline">Built for flexible travelers</span>
-              <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 sm:inline">Private beta</span>
-            </div>
-          </header>
-
           <PremiumHero />
         </div>
       </section>
@@ -32,6 +24,8 @@ export default function Home() {
       <section className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 sm:px-8 lg:-mt-20 lg:px-10">
         <FlightSearchForm />
       </section>
+
+      <RecentSearches />
 
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
         <div className="grid gap-8 border-y border-[#102f35]/10 py-10 lg:grid-cols-[1.1fr_2fr] lg:gap-16 lg:py-14">
@@ -54,6 +48,7 @@ export default function Home() {
           <span className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#102f35]">Built into the architecture <ArrowUpRight className="size-4" aria-hidden /></span>
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

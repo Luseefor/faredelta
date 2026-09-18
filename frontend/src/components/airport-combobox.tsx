@@ -10,12 +10,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { airportTypeLabel, type AirportOption } from "@/lib/airports";
 import { cn } from "@/lib/utils";
 
-export function AirportCombobox({ name, label, placeholder }: { name: string; label: string; placeholder: string }) {
+export function AirportCombobox({ name, label, placeholder, defaultCode }: { name: string; label: string; placeholder: string; defaultCode?: string }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<AirportOption[]>([]);
   const [selected, setSelected] = useState<AirportOption | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = (defaultCode ?? "").toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) return;
+    const controller = new AbortController();
+    fetch(`/api/airports?q=${encodeURIComponent(code)}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Airport search failed");
+        return response.json() as Promise<{ airports: AirportOption[] }>;
+      })
+      .then((body) => {
+        const match = body.airports.find((airport) => airport.code === code);
+        if (match && !controller.signal.aborted) setSelected(match);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [defaultCode]);
 
   useEffect(() => {
     if (!open) return;
