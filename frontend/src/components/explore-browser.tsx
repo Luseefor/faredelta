@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Compass, LoaderCircle, Search } from "lucide-react";
 
@@ -21,13 +21,21 @@ function cityName(code: string, lookup: Map<string, string>) {
 }
 
 export function ExploreBrowser() {
-  const [initial] = useState(loadSettings);
-  const [origin, setOrigin] = useState(initial.homeAirport);
+  const [origin, setOrigin] = useState("");
   const [departDate, setDepartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [result, setResult] = useState<CheapDestinationsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    // Home-airport default loads after hydration so SSR and first render match.
+    Promise.resolve()
+      .then(() => loadSettings().homeAirport)
+      .then(setOrigin)
+      .catch(() => undefined);
+    return undefined;
+  }, []);
 
   const cities = useMemo(() => {
     const map = new Map<string, string>();
@@ -132,7 +140,7 @@ export function ExploreBrowser() {
             <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {result.destinations.map((destination) => (
                 <li key={destination.destination}>
-                  <Card className="h-full border-white/5 bg-card/85">
+                  <Card className="h-full border-white/5 bg-card/85 transition-colors hover:border-[#1b6566]/30">
                     <CardContent className="flex h-full flex-col p-5">
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#b47b16]">{destination.destination}</p>
                       <h3 className="mt-1 text-xl font-semibold">{cityName(destination.destination, cities)}</h3>

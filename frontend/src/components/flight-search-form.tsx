@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, MapPin, Search, SlidersHorizontal, UsersRound } from "lucide-react";
 
@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { allAirports } from "@/lib/airport-search";
 import { nearestAlternateAirports } from "@/lib/geo";
-import { loadSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, loadSettings } from "@/lib/settings";
+import type { CabinClass } from "@/lib/types";
 
 function inputValue(form: FormData, name: string) { return String(form.get(name) ?? "").trim(); }
 
@@ -20,7 +21,23 @@ export function FlightSearchForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [tripType, setTripType] = useState<"round_trip" | "one_way">("round_trip");
-  const [settings] = useState(loadSettings);
+  // Browser-stored defaults must match the SSR render, so they load after
+  // hydration; the combobox and selects below pick them up on update.
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [cabin, setCabin] = useState<CabinClass>(DEFAULT_SETTINGS.defaultCabin);
+  const [stops, setStops] = useState(String(DEFAULT_SETTINGS.defaultStops));
+
+  useEffect(() => {
+    Promise.resolve()
+      .then(() => loadSettings())
+      .then((loaded) => {
+        setSettings(loaded);
+        setCabin(loaded.defaultCabin);
+        setStops(String(loaded.defaultStops));
+      })
+      .catch(() => undefined);
+    return undefined;
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(null);
@@ -78,7 +95,6 @@ export function FlightSearchForm() {
           </div>
           <span className="hidden text-xs text-[#102f35]/50 sm:inline">Search across flexible dates</span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1b6566]"><SlidersHorizontal className="size-3.5" /> Flexible filters</span>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-5 lg:p-6">
@@ -106,12 +122,12 @@ export function FlightSearchForm() {
           </SelectField>
           </div>
           <div className="lg:col-span-2">
-          <SelectField icon={SlidersHorizontal} name="cabin_class" label="Cabin" defaultValue={settings.defaultCabin}>
+          <SelectField icon={SlidersHorizontal} name="cabin_class" label="Cabin" value={cabin} onValueChange={(value) => setCabin(value as CabinClass)}>
             <SelectItem value="economy">Economy</SelectItem><SelectItem value="premium_economy">Premium economy</SelectItem><SelectItem value="business">Business</SelectItem><SelectItem value="first">First</SelectItem>
           </SelectField>
           </div>
           <div className="lg:col-span-2">
-          <SelectField icon={MapPin} name="maximum_stops" label="Stops" defaultValue={String(settings.defaultStops)}>
+          <SelectField icon={MapPin} name="maximum_stops" label="Stops" value={stops} onValueChange={setStops}>
             <SelectItem value="0">Nonstop only</SelectItem><SelectItem value="1">Up to 1 stop</SelectItem><SelectItem value="2">Up to 2 stops</SelectItem>
           </SelectField>
           </div>
@@ -149,6 +165,6 @@ function DateField({ id, label }: { id: string; label: string }) {
   return <div className="min-w-0"><Label htmlFor={id} className="text-[10px] text-[#102f35]/50">{label}</Label><Input id={id} name={id} type="date" required className="mt-0.5 h-8 min-w-0 max-w-full border-0 bg-transparent px-0 text-[11px] font-semibold shadow-none focus-visible:ring-0" /></div>;
 }
 
-function SelectField({ icon: Icon, name, label, defaultValue, children }: { icon: typeof MapPin; name: string; label: string; defaultValue: string; children: React.ReactNode }) {
-  return <div className="h-full rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-3.5"><Label htmlFor={name} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#102f35]/55"><Icon className="size-3.5 text-[#1b6566]" />{label}</Label><Select name={name} defaultValue={defaultValue}><SelectTrigger id={name} className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:ring-0"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;
+function SelectField({ icon: Icon, name, label, defaultValue, value, onValueChange, children }: { icon: typeof MapPin; name: string; label: string; defaultValue?: string; value?: string; onValueChange?: (value: string) => void; children: React.ReactNode }) {
+  return <div className="h-full rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-3.5"><Label htmlFor={name} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#102f35]/55"><Icon className="size-3.5 text-[#1b6566]" />{label}</Label><Select name={name} defaultValue={defaultValue} value={value} onValueChange={onValueChange}><SelectTrigger id={name} className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:ring-0"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;
 }

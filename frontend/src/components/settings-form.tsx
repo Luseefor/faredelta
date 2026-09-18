@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Settings2 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,12 +19,24 @@ import { loadSettings, saveSettings } from "@/lib/settings";
 import type { CabinClass } from "@/lib/types";
 
 export function SettingsForm() {
-  const [initial] = useState(loadSettings);
-  const [homeAirport, setHomeAirport] = useState(initial.homeAirport);
-  const [cabin, setCabin] = useState<CabinClass>(initial.defaultCabin);
-  const [stops, setStops] = useState(String(initial.defaultStops));
+  const [homeAirport, setHomeAirport] = useState("");
+  const [cabin, setCabin] = useState<CabinClass>("economy");
+  const [stops, setStops] = useState("1");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    // Stored settings load after hydration so SSR and first render match.
+    Promise.resolve()
+      .then(() => loadSettings())
+      .then((current) => {
+        setHomeAirport(current.homeAirport);
+        setCabin(current.defaultCabin);
+        setStops(String(current.defaultStops));
+      })
+      .catch(() => undefined);
+    return undefined;
+  }, []);
 
   function onSave(event: React.FormEvent) {
     event.preventDefault();
