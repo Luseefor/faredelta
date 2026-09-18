@@ -140,7 +140,21 @@ NotificationRepositoryDependency = Annotated[
 def get_flight_search_service(
     session: SessionDependency, provider: ProviderDependency
 ) -> FlightSearchService:
-    return FlightSearchService(provider, FlightSearchRepository(session))
+    settings = get_settings()
+    real_configured = (
+        settings.duffel_access_token is not None
+        or settings.travelpayouts_access_token is not None
+    )
+    if settings.flight_provider != "mock" and real_configured:
+        notice: str | None = (
+            "Live sources had no fares for these dates, so these are sample fares. "
+            "Try dates closer to today or another route."
+        )
+    elif settings.mock_provider_enabled:
+        notice = "Sample fares for development. Connect a flight provider for real fares."
+    else:
+        notice = None
+    return FlightSearchService(provider, FlightSearchRepository(session), notice)
 
 
 FlightSearchServiceDependency = Annotated[FlightSearchService, Depends(get_flight_search_service)]

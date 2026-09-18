@@ -23,10 +23,12 @@ AIRLINES = (
     ("B6", "JetBlue"),
 )
 
+PROVIDER_NAME = "FareDelta Mock"
+
 
 class MockFlightProvider(FlightProvider):
     def get_provider_name(self) -> str:
-        return "FareDelta Mock"
+        return PROVIDER_NAME
 
     async def search_flights(self, request: FlightSearchRequest) -> list[FlightOffer]:
         seed_material = request.model_dump_json()

@@ -63,6 +63,7 @@ export interface FlightSearchResponse {
   retrieved_at: string;
   trip_type: TripType;
   airport_pairs: AirportPair[];
+  notice: string | null;
   offers: FlightOffer[];
 }
 

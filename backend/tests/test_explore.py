@@ -1,5 +1,7 @@
 import httpx
 
+from app.api.dependencies import get_explore_service
+from app.main import app
 from app.schemas.explore import CheapDestinationsQuery
 from app.services.explore import ExploreService, parse_fare
 from tests.test_auth import make_client
@@ -55,13 +57,20 @@ async def test_cheap_destinations_empty_without_token() -> None:
 
 
 async def test_cheap_destinations_endpoint_states() -> None:
-    async for client, _ in make_client():
-        bad = await client.get("/api/flights/cheap-destinations", params={"origin": "XX"})
-        assert bad.status_code == 422
-        # No Travelpayouts token in tests: honest 503, not an empty lie.
-        missing = await client.get("/api/flights/cheap-destinations", params={"origin": "ORD"})
-        assert missing.status_code == 503
-        assert missing.json() == {"detail": "Cheap fares are not configured."}
+    # Hermetic: local .env may carry a real token, so pin the service.
+    app.dependency_overrides[get_explore_service] = lambda: ExploreService(None)
+    try:
+        async for client, _ in make_client():
+            bad = await client.get("/api/flights/cheap-destinations", params={"origin": "XX"})
+            assert bad.status_code == 422
+            # Unconfigured token: honest 503, not an empty lie.
+            missing = await client.get(
+                "/api/flights/cheap-destinations", params={"origin": "ORD"}
+            )
+            assert missing.status_code == 503
+            assert missing.json() == {"detail": "Cheap fares are not configured."}
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_parse_fare_rejects_bad_rows() -> None:

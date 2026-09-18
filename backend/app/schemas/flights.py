@@ -154,6 +154,7 @@ class FlightSearchResponse(BaseModel):
     retrieved_at: datetime
     trip_type: TripType = TripType.round_trip
     airport_pairs: list[AirportPair] = Field(default_factory=list)
+    notice: str | None = None
     offers: list[FlightOffer]
 
 

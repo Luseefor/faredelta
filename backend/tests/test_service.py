@@ -25,5 +25,17 @@ async def test_service_returns_and_persists_normalized_response() -> None:
 
     assert response.result_count == 9
     assert response.providers == ["FareDelta Mock"]
+    assert response.notice is None
     assert repository.request is not None
     assert len(repository.offers) == response.result_count
+
+
+async def test_service_marks_sample_only_results() -> None:
+    repository = MemoryRepository()
+    service = FlightSearchService(
+        MockFlightProvider(), repository, sample_data_notice="Sample fares."  # type: ignore[arg-type]
+    )
+    response = await service.search(valid_request())
+
+    assert response.result_count == 9
+    assert response.notice == "Sample fares."

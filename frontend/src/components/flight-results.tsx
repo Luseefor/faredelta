@@ -9,6 +9,7 @@ import { FareHistoryChart } from "@/components/fare-history-chart";
 import { ResultState } from "@/components/result-state";
 import { ShareButton } from "@/components/share-button";
 import { TrackRouteButton } from "@/components/track-route-button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -191,6 +192,9 @@ export function FlightResults({
 
   return (
     <div className="space-y-4">
+      {data.notice ? (
+        <Alert><AlertDescription>{data.notice}</AlertDescription></Alert>
+      ) : null}
       {oneWay ? null : (
         <FlexibleDateMatrix
           offers={data.offers}
