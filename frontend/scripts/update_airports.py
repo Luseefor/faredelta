@@ -33,6 +33,12 @@ def main() -> None:
         code = row["iata_code"].strip().upper()
         if len(code) != 3 or not code.isalpha() or row["type"] == "closed_airport":
             continue
+        try:
+            latitude: float | None = round(float(row["latitude_deg"]), 3)
+            longitude: float | None = round(float(row["longitude_deg"]), 3)
+        except ValueError:
+            latitude = None
+            longitude = None
         airport: dict[str, object] = {
             "code": code,
             "city": row["municipality"].strip() or row["name"].strip(),
@@ -41,6 +47,8 @@ def main() -> None:
             "country": countries.get(row["iso_country"], row["iso_country"]).strip(),
             "type": row["type"],
             "scheduled": row["scheduled_service"] == "yes",
+            "latitude": latitude,
+            "longitude": longitude,
         }
         score = (bool(airport["scheduled"]), TYPE_RANK.get(row["type"], -1))
         if code not in chosen or score > chosen[code][0]:

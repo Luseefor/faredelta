@@ -7,6 +7,7 @@ import { FlightOfferCard } from "@/components/flight-offer-card";
 import { FlexibleDateMatrix } from "@/components/flexible-date-matrix";
 import { FareHistoryChart } from "@/components/fare-history-chart";
 import { ResultState } from "@/components/result-state";
+import { ShareButton } from "@/components/share-button";
 import { TrackRouteButton } from "@/components/track-route-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +21,7 @@ import {
 import { searchFlights } from "@/lib/api/search";
 import { sortFlightOffers } from "@/lib/flight-sorting";
 import { farePairKey } from "@/lib/flexible-date-matrix";
+import { recordSearch } from "@/lib/recent-searches";
 import type {
   CabinClass,
   FlightSearchRequest,
@@ -32,11 +34,25 @@ function parseRequest(params: Record<string, string | string[] | undefined>) {
     const raw = params[key];
     return typeof raw === "string" ? raw : "";
   };
+  const values = (key: string) => {
+    const raw = params[key];
+    const list = typeof raw === "string" ? [raw] : (raw ?? []);
+    return [...new Set(
+      list.map((item) => item.toUpperCase()).filter((item) => /^[A-Z]{3}$/.test(item)),
+    )].slice(0, 1);
+  };
   const origin = value("origin").toUpperCase();
   const destination = value("destination").toUpperCase();
   const travelers = Number(value("travelers"));
   const maximumStops = Number(value("maximum_stops"));
   const cabinClass = value("cabin_class") as CabinClass;
+  const tripType = value("trip_type") === "one_way" ? "one_way" : "round_trip";
+  const originAlternates = values("origin_alternates").filter(
+    (code) => code !== origin && code !== destination,
+  );
+  const destinationAlternates = values("destination_alternates").filter(
+    (code) => code !== origin && code !== destination && !originAlternates.includes(code),
+  );
   const dates = [
     value("earliest_departure_date"),
     value("latest_departure_date"),
@@ -44,11 +60,18 @@ function parseRequest(params: Record<string, string | string[] | undefined>) {
     value("latest_return_date"),
   ];
   const validCabins: CabinClass[] = ["economy", "premium_economy", "business", "first"];
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const returnsValid =
+    tripType === "one_way"
+      ? dates[2] === "" && dates[3] === ""
+      : datePattern.test(dates[2]) && datePattern.test(dates[3]);
   if (
     !/^[A-Z]{3}$/.test(origin) ||
     !/^[A-Z]{3}$/.test(destination) ||
     origin === destination ||
-    dates.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date)) ||
+    !datePattern.test(dates[0]) ||
+    !datePattern.test(dates[1]) ||
+    !returnsValid ||
     !Number.isInteger(travelers) ||
     travelers < 1 ||
     travelers > 9 ||
@@ -62,10 +85,13 @@ function parseRequest(params: Record<string, string | string[] | undefined>) {
   return {
     origin,
     destination,
+    trip_type: tripType,
+    origin_alternates: originAlternates,
+    destination_alternates: destinationAlternates,
     earliest_departure_date: dates[0],
     latest_departure_date: dates[1],
-    earliest_return_date: dates[2],
-    latest_return_date: dates[3],
+    earliest_return_date: tripType === "one_way" ? null : dates[2],
+    latest_return_date: tripType === "one_way" ? null : dates[3],
     travelers,
     cabin_class: cabinClass,
     maximum_stops: maximumStops,
@@ -89,7 +115,16 @@ export function FlightResults({
     if (!request) return;
     const controller = new AbortController();
     searchFlights(request, controller.signal)
-      .then(setData)
+      .then((response) => {
+        setData(response);
+        recordSearch({
+          href: window.location.pathname + window.location.search,
+          origin: request.origin,
+          destination: request.destination,
+          tripType: request.trip_type,
+          label: `${request.origin} → ${request.destination}`,
+        });
+      })
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
         setError(reason instanceof Error ? reason.message : "The search failed.");
@@ -103,7 +138,9 @@ export function FlightResults({
   const offers = useMemo(() => {
     const matchingOffers = selectedPair
       ? (data?.offers ?? []).filter(
-          (offer) => farePairKey(offer.departure_time.slice(0, 10), offer.return_date) === selectedPair,
+          (offer) =>
+            offer.return_date !== null &&
+            farePairKey(offer.departure_time.slice(0, 10), offer.return_date) === selectedPair,
         )
       : (data?.offers ?? []);
     return sortFlightOffers(matchingOffers, sortMode);
@@ -150,13 +187,17 @@ export function FlightResults({
     );
   }
 
+  const oneWay = request.trip_type === "one_way";
+
   return (
     <div className="space-y-4">
-      <FlexibleDateMatrix
-        offers={data.offers}
-        selectedPair={selectedPair}
-        onSelectPair={setSelectedPair}
-      />
+      {oneWay ? null : (
+        <FlexibleDateMatrix
+          offers={data.offers}
+          selectedPair={selectedPair}
+          onSelectPair={setSelectedPair}
+        />
+      )}
       <FareHistoryChart
         origin={request.origin}
         destination={request.destination}
@@ -166,6 +207,7 @@ export function FlightResults({
         <div>
           <p className="text-sm text-muted-foreground">
             {selectedPair ? `${offers.length} of ${data.result_count}` : data.result_count} offers
+            {oneWay ? " · one way" : ""}
           </p>
           <h2 className="text-xl font-semibold">
             {request.origin} to {request.destination}
@@ -173,9 +215,20 @@ export function FlightResults({
           <p className="mt-1 text-xs text-muted-foreground">
             Source: {data.providers.join(", ")}
           </p>
+          {data.airport_pairs.length > 1 ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Nearby airports included:{" "}
+              {data.airport_pairs
+                .filter((pair) => pair.origin !== request.origin || pair.destination !== request.destination)
+                .map((pair) => `${pair.origin} → ${pair.destination}`)
+                .join(", ")}
+              {" "}· matrix shows the lowest fare per date across airports.
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <TrackRouteButton request={request} />
+          <ShareButton />
           <span className="text-sm text-muted-foreground">Sort by</span>
           <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
             <SelectTrigger className="w-36" aria-label="Sort flight offers">

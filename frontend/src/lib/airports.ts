@@ -6,6 +6,8 @@ export interface AirportOption {
   country: string;
   type: "large_airport" | "medium_airport" | "small_airport" | "seaplane_base" | "heliport" | "balloonport";
   scheduled: boolean;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export function airportTypeLabel(type: AirportOption["type"]) {
