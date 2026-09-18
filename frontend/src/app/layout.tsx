@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import "./globals.css";
 
 import { ClerkSync } from "@/components/clerk-sync";
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col"><ClerkProvider><ClerkSync />{children}</ClerkProvider></body>
+      <body className="flex min-h-full flex-col"><ClerkProvider signInUrl="/login" signUpUrl="/signup" appearance={{ theme: shadcn }}><ClerkSync />{children}</ClerkProvider></body>
     </html>
   );
 }
