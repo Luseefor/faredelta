@@ -9,13 +9,14 @@ import httpx
 
 from app.core.exceptions import FlightProviderError
 from app.providers.base import FlightProvider
-from app.providers.sampling import sample_date_pairs
+from app.providers.sampling import sample_date_pairs, sample_dates
 from app.schemas.flights import (
     Airline,
     Airport,
     FlightOffer,
     FlightSearchRequest,
     FlightSegment,
+    TripType,
 )
 
 _DURATION_PATTERN = re.compile(r"^PT(?:(\d+)H)?(?:(\d+)M)?$")
@@ -44,18 +45,31 @@ class DuffelFlightProvider(FlightProvider):
 
     async def search_flights(self, request: FlightSearchRequest) -> list[FlightOffer]:
         try:
-            date_pairs = sample_date_pairs(
-                request.earliest_departure_date,
-                request.latest_departure_date,
-                request.earliest_return_date,
-                request.latest_return_date,
-            )
-            payloads = await asyncio.gather(
-                *(
-                    self._search_pair(request, departure_date, return_date)
-                    for departure_date, return_date in date_pairs
+            if request.trip_type is TripType.one_way:
+                departures = sample_dates(
+                    request.earliest_departure_date, request.latest_departure_date
                 )
-            )
+                payloads = await asyncio.gather(
+                    *(
+                        self._search_one_way(request, departure_date)
+                        for departure_date in departures
+                    )
+                )
+            else:
+                assert request.earliest_return_date is not None
+                assert request.latest_return_date is not None
+                date_pairs = sample_date_pairs(
+                    request.earliest_departure_date,
+                    request.latest_departure_date,
+                    request.earliest_return_date,
+                    request.latest_return_date,
+                )
+                payloads = await asyncio.gather(
+                    *(
+                        self._search_pair(request, departure_date, return_date)
+                        for departure_date, return_date in date_pairs
+                    )
+                )
             offers = [offer for payload in payloads for offer in self._normalize(payload, request)]
             return [offer for offer in offers if offer.stops <= request.maximum_stops]
         except FlightProviderError:
@@ -70,11 +84,44 @@ class DuffelFlightProvider(FlightProvider):
         ) as exc:
             raise FlightProviderError("Duffel search could not be completed") from exc
 
+    async def _search_one_way(
+        self, request: FlightSearchRequest, departure_date: date
+    ) -> dict[str, Any]:
+        return await self._search_slices(
+            request,
+            [
+                {
+                    "origin": request.origin,
+                    "destination": request.destination,
+                    "departure_date": departure_date.isoformat(),
+                },
+            ],
+        )
+
     async def _search_pair(
         self,
         request: FlightSearchRequest,
         departure_date: date,
         return_date: date,
+    ) -> dict[str, Any]:
+        return await self._search_slices(
+            request,
+            [
+                {
+                    "origin": request.origin,
+                    "destination": request.destination,
+                    "departure_date": departure_date.isoformat(),
+                },
+                {
+                    "origin": request.destination,
+                    "destination": request.origin,
+                    "departure_date": return_date.isoformat(),
+                },
+            ],
+        )
+
+    async def _search_slices(
+        self, request: FlightSearchRequest, slices: list[dict[str, str]]
     ) -> dict[str, Any]:
         response = await self.client.post(
             f"{self.base_url}/air/offer_requests",
@@ -87,18 +134,7 @@ class DuffelFlightProvider(FlightProvider):
             },
             json={
                 "data": {
-                    "slices": [
-                        {
-                            "origin": request.origin,
-                            "destination": request.destination,
-                            "departure_date": departure_date.isoformat(),
-                        },
-                        {
-                            "origin": request.destination,
-                            "destination": request.origin,
-                            "departure_date": return_date.isoformat(),
-                        },
-                    ],
+                    "slices": slices,
                     "passengers": [{"type": "adult"} for _ in range(request.travelers)],
                     "cabin_class": request.cabin_class.value,
                     "max_connections": request.maximum_stops,
@@ -132,7 +168,11 @@ class DuffelFlightProvider(FlightProvider):
         price = total.quantize(Decimal("0.01"))
         departure_time = datetime.fromisoformat(outbound_segments[0]["departing_at"])
         arrival_time = datetime.fromisoformat(outbound_segments[-1]["arriving_at"])
-        return_date = datetime.fromisoformat(slices[1]["segments"][0]["departing_at"]).date()
+        return_date = (
+            datetime.fromisoformat(slices[1]["segments"][0]["departing_at"]).date()
+            if len(slices) > 1
+            else None
+        )
         stops = max(len(slice_["segments"]) - 1 for slice_ in slices)
         offer_id = uuid.uuid5(uuid.NAMESPACE_URL, f"duffel:{raw_offer['id']}")
         return FlightOffer(

@@ -19,6 +19,9 @@ def valid_request(**overrides: object) -> FlightSearchRequest:
         "maximum_stops": 1,
     }
     values.update(overrides)
+    if str(values.get("trip_type") or "") == "one_way":
+        values.pop("earliest_return_date", None)
+        values.pop("latest_return_date", None)
     return FlightSearchRequest.model_validate(values)
 
 

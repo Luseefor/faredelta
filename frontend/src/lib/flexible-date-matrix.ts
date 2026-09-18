@@ -21,11 +21,15 @@ export function farePairKey(departureDate: string, returnDate: string) {
 }
 
 export function buildFareMatrix(offers: FlightOffer[]): FareMatrix {
-  const departureDates = [...new Set(offers.map((offer) => offer.departure_time.slice(0, 10)))].sort();
-  const returnDates = [...new Set(offers.map((offer) => offer.return_date))].sort();
+  // The matrix is a round-trip view; one-way offers carry no return date.
+  const roundTrips = offers.filter(
+    (offer): offer is FlightOffer & { return_date: string } => offer.return_date !== null,
+  );
+  const departureDates = [...new Set(roundTrips.map((offer) => offer.departure_time.slice(0, 10)))].sort();
+  const returnDates = [...new Set(roundTrips.map((offer) => offer.return_date))].sort();
   const cells = new Map<string, FareMatrixCell>();
 
-  for (const offer of offers) {
+  for (const offer of roundTrips) {
     const departureDate = offer.departure_time.slice(0, 10);
     const key = farePairKey(departureDate, offer.return_date);
     const current = cells.get(key);

@@ -39,7 +39,7 @@ export function FlightOfferCard({ offer }: { offer: FlightOffer }) {
           </div>
 
           <div className="flex items-center justify-between border-t border-[#102f35]/8 bg-[#f2c94c]/12 p-5 lg:block lg:border-t-0 lg:border-l lg:p-6 lg:text-right">
-            <div><p className="text-3xl font-bold tracking-[-0.05em] text-[#102f35]">{price}</p><p className="mt-1 text-xs text-[#102f35]/45">per traveler · round trip</p></div>
+            <div><p className="text-3xl font-bold tracking-[-0.05em] text-[#102f35]">{price}</p><p className="mt-1 text-xs text-[#102f35]/45">per traveler · {offer.return_date === null ? "one way" : "round trip"}</p></div>
             <div className="mt-0 flex items-center gap-2 text-xs font-medium text-[#1b6566] lg:mt-8 lg:justify-end"><Sparkles className="size-3.5" aria-hidden />{sourceLabel}</div>
           </div>
         </div>
