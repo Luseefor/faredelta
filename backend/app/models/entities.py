@@ -20,6 +20,10 @@ class User(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str | None] = mapped_column(String(320), unique=True, nullable=True)
+    clerk_user_id: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    email_verified: Mapped[bool] = mapped_column(nullable=False, default=False)
 
 
 class FlightSearch(TimestampMixin, Base):
@@ -33,10 +37,17 @@ class FlightSearch(TimestampMixin, Base):
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     origin: Mapped[str] = mapped_column(String(3), nullable=False)
     destination: Mapped[str] = mapped_column(String(3), nullable=False)
+    trip_type: Mapped[str] = mapped_column(String(16), nullable=False, default="round_trip")
+    origin_alternates: Mapped[list[str]] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False, default=list
+    )
+    destination_alternates: Mapped[list[str]] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False, default=list
+    )
     earliest_departure_date: Mapped[date] = mapped_column(Date, nullable=False)
     latest_departure_date: Mapped[date] = mapped_column(Date, nullable=False)
-    earliest_return_date: Mapped[date] = mapped_column(Date, nullable=False)
-    latest_return_date: Mapped[date] = mapped_column(Date, nullable=False)
+    earliest_return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    latest_return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     travelers: Mapped[int] = mapped_column(Integer, nullable=False)
     cabin_class: Mapped[str] = mapped_column(String(32), nullable=False)
     maximum_stops: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -94,7 +105,7 @@ class FareHistory(Base):
     origin: Mapped[str] = mapped_column(String(3), nullable=False)
     destination: Mapped[str] = mapped_column(String(3), nullable=False)
     departure_date: Mapped[date] = mapped_column(Date, nullable=False)
-    return_date: Mapped[date] = mapped_column(Date, nullable=False)
+    return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     airline: Mapped[str] = mapped_column(String(120), nullable=False)
     provider: Mapped[str] = mapped_column(String(80), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -108,6 +119,7 @@ class TrackedRoute(TimestampMixin, Base):
     __table_args__ = (
         Index("ix_tracked_routes_user_id", "user_id"),
         Index("ix_tracked_routes_anonymous_id", "anonymous_id"),
+        Index("ix_tracked_routes_next_refresh_at", "next_refresh_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -115,15 +127,61 @@ class TrackedRoute(TimestampMixin, Base):
     anonymous_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     origin: Mapped[str] = mapped_column(String(3), nullable=False)
     destination: Mapped[str] = mapped_column(String(3), nullable=False)
+    trip_type: Mapped[str] = mapped_column(String(16), nullable=False, default="round_trip")
+    origin_alternates: Mapped[list[str]] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False, default=list
+    )
+    destination_alternates: Mapped[list[str]] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False, default=list
+    )
     earliest_departure_date: Mapped[date] = mapped_column(Date, nullable=False)
     latest_departure_date: Mapped[date] = mapped_column(Date, nullable=False)
-    earliest_return_date: Mapped[date] = mapped_column(Date, nullable=False)
-    latest_return_date: Mapped[date] = mapped_column(Date, nullable=False)
+    earliest_return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    latest_return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     travelers: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     cabin_class: Mapped[str] = mapped_column(String(32), nullable=False, default="economy")
     maximum_stops: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    paused: Mapped[bool] = mapped_column(nullable=False, default=False)
+    refresh_cadence_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=24)
+    next_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    consecutive_failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     previous_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     last_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PriceAlert(TimestampMixin, Base):
+    __tablename__ = "price_alerts"
+    __table_args__ = (
+        Index("ix_price_alerts_user_id", "user_id"),
+        Index("ix_price_alerts_route_id", "route_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    route_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tracked_routes.id"), nullable=False)
+    target_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    drop_percent: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    last_notified_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+
+class Notification(TimestampMixin, Base):
+    __tablename__ = "notifications"
+    __table_args__ = (Index("ix_notifications_user_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    route_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tracked_routes.id"), nullable=True
+    )
+    alert_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("price_alerts.id"), nullable=True
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    previous_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

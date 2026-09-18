@@ -10,12 +10,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { airportTypeLabel, type AirportOption } from "@/lib/airports";
 import { cn } from "@/lib/utils";
 
-export function AirportCombobox({ name, label, placeholder }: { name: string; label: string; placeholder: string }) {
+export function AirportCombobox({ name, label, placeholder, defaultCode }: { name: string; label: string; placeholder: string; defaultCode?: string }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<AirportOption[]>([]);
   const [selected, setSelected] = useState<AirportOption | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = (defaultCode ?? "").toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) return;
+    const controller = new AbortController();
+    fetch(`/api/airports?q=${encodeURIComponent(code)}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Airport search failed");
+        return response.json() as Promise<{ airports: AirportOption[] }>;
+      })
+      .then((body) => {
+        const match = body.airports.find((airport) => airport.code === code);
+        if (match && !controller.signal.aborted) setSelected(match);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [defaultCode]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +71,7 @@ export function AirportCombobox({ name, label, placeholder }: { name: string; la
         <PopoverTrigger asChild>
           <Button type="button" variant="ghost" role="combobox" aria-expanded={open} aria-labelledby={`${name}-label ${name}-value`} className="mt-1 h-auto w-full justify-between px-0 py-0 text-left hover:bg-transparent">
             <span id={`${name}-value`} className="min-w-0">{selected ? <><span className="block text-lg font-semibold tracking-[-0.025em] text-[#102f35]">{selected.city} <span className="text-[#1b6566]">{selected.code}</span></span><span className="mt-0.5 block truncate text-[10px] font-normal text-[#102f35]/50">{selected.name} · {selected.country}</span></> : <span className="text-lg font-semibold tracking-[-0.025em] text-[#102f35]/38">{placeholder}</span>}</span>
-            <ChevronsUpDown className="ml-3 size-4 shrink-0 text-[#102f35]/35" aria-hidden />
+            <ChevronsUpDown className={cn("ml-3 size-4 shrink-0 text-[#102f35]/35 transition-transform duration-200", open && "rotate-180")} aria-hidden />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[min(30rem,calc(100vw-2.5rem))] p-1">

@@ -17,7 +17,11 @@ After changing SQLAlchemy models, create and review an Alembic revision before a
 
 - Vercel: deploy `frontend` as the root directory and set `FAREDELTA_API_URL` to the public backend URL.
 - Railway: deploy `backend` as the service root. The committed `railway.toml` builds the Dockerfile, runs `alembic upgrade head` before release, checks `/health`, and restarts failed containers. Railway PostgreSQL connection URLs are normalized automatically for SQLAlchemy's asyncpg driver.
-- Scheduled refreshes: set a long random `TRACKED_ROUTE_JOB_TOKEN` on the backend and configure the platform scheduler to `POST /api/jobs/refresh-tracked-routes` with the matching `X-FareDelta-Job-Token` header.
+- Scheduled refreshes: set a long random `TRACKED_ROUTE_JOB_TOKEN` on the backend and configure the platform scheduler to `POST /api/jobs/refresh-tracked-routes` with the matching `X-FareDelta-Job-Token` header. Run it hourly: each route carries its own `refresh_cadence_hours` (default 24, adjustable per route from 6 to 168), and the job only checks due routes, five provider searches at a time. Failures back off exponentially (up to 72 hours) and are counted on `consecutive_failures`, so one bad route never blocks the batch. Example with curl from any cron host:
+  ```bash
+  curl -X POST "$BACKEND_URL/api/jobs/refresh-tracked-routes" \
+    -H "X-FareDelta-Job-Token: $TRACKED_ROUTE_JOB_TOKEN"
+  ```
 - Neon or Supabase: provide an asyncpg-compatible `DATABASE_URL`, including TLS parameters required by the chosen service.
 
 No external provider credential is required for local development. With no tokens configured and `MOCK_PROVIDER_ENABLED=true`, automatic mode uses deterministic sample data. Production should set `MOCK_PROVIDER_ENABLED=false`.

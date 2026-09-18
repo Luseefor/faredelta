@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     travelpayouts_base_url: str = "https://api.travelpayouts.com"
     travelpayouts_market: str = "us"
     tracked_route_job_token: str | None = None
+    clerk_secret_key: SecretStr | None = None
+    clerk_authorized_parties: list[str] = []
+    resend_api_key: SecretStr | None = None
+    alert_from_email: str | None = None
+    app_base_url: str = "https://faredelta.rijan.sh"
 
     @field_validator("database_url", mode="before")
     @classmethod

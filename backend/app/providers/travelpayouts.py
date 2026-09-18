@@ -18,6 +18,7 @@ from app.schemas.flights import (
     FlightOffer,
     FlightSearchRequest,
     FlightSegment,
+    TripType,
 )
 
 _AIRLINE_NAMES = {
@@ -110,24 +111,26 @@ class TravelpayoutsFlightProvider(FlightProvider):
         self,
         request: FlightSearchRequest,
         departure_month: str,
-        return_month: str,
+        return_month: str | None,
     ) -> dict[str, Any]:
+        params: dict[str, str | int] = {
+            "origin": request.origin,
+            "destination": request.destination,
+            "departure_at": departure_month,
+            "one_way": str(request.trip_type is TripType.one_way).lower(),
+            "direct": str(request.maximum_stops == 0).lower(),
+            "currency": "usd",
+            "market": self.market,
+            "sorting": "price",
+            "unique": "false",
+            "limit": 100,
+            "page": 1,
+        }
+        if return_month is not None:
+            params["return_at"] = return_month
         response = await self.client.get(
             f"{self.base_url}/aviasales/v3/prices_for_dates",
-            params={
-                "origin": request.origin,
-                "destination": request.destination,
-                "departure_at": departure_month,
-                "return_at": return_month,
-                "one_way": "false",
-                "direct": str(request.maximum_stops == 0).lower(),
-                "currency": "usd",
-                "market": self.market,
-                "sorting": "price",
-                "unique": "false",
-                "limit": 100,
-                "page": 1,
-            },
+            params=params,
             headers={
                 "Accept": "application/json",
                 "Accept-Encoding": "gzip, deflate",
@@ -145,11 +148,11 @@ class TravelpayoutsFlightProvider(FlightProvider):
         self, payload: dict[str, Any], request: FlightSearchRequest
     ) -> list[FlightOffer]:
         currency = str(payload.get("currency") or "USD")
+        one_way = request.trip_type is TripType.one_way
         offers: list[FlightOffer] = []
         for raw in payload.get("data", []):
             stops = max(int(raw.get("transfers", 0)), int(raw.get("return_transfers", 0)))
             departure_date = datetime.fromisoformat(str(raw["departure_at"])).date()
-            return_date = datetime.fromisoformat(str(raw["return_at"])).date()
             if stops > request.maximum_stops:
                 continue
             if (
@@ -158,18 +161,27 @@ class TravelpayoutsFlightProvider(FlightProvider):
                 <= request.latest_departure_date
             ):
                 continue
-            if not request.earliest_return_date <= return_date <= request.latest_return_date:
-                continue
+            if not one_way:
+                if request.earliest_return_date is None or request.latest_return_date is None:
+                    continue
+                if "return_at" not in raw:
+                    continue
+                return_date = datetime.fromisoformat(str(raw["return_at"])).date()
+                if not request.earliest_return_date <= return_date <= request.latest_return_date:
+                    continue
             offers.append(self._normalize_offer(raw, request, currency))
         return offers
 
     def _normalize_offer(
         self, raw: dict[str, Any], request: FlightSearchRequest, currency: str
     ) -> FlightOffer:
+        one_way = request.trip_type is TripType.one_way
         departure_time = datetime.fromisoformat(str(raw["departure_at"]))
         outbound_duration = int(raw["duration_to"])
         arrival_time = departure_time + timedelta(minutes=outbound_duration)
-        return_time = datetime.fromisoformat(str(raw["return_at"]))
+        return_time = (
+            datetime.fromisoformat(str(raw["return_at"])) if raw.get("return_at") else None
+        )
         return_duration = int(raw.get("duration_back") or outbound_duration)
         airline_code = str(raw["airline"]).upper()
         airline = Airline(
@@ -184,10 +196,11 @@ class TravelpayoutsFlightProvider(FlightProvider):
         offer_key = ":".join(
             (
                 "travelpayouts",
+                "oneway" if one_way else "roundtrip",
                 origin_code,
                 destination_code,
                 departure_time.isoformat(),
-                return_time.isoformat(),
+                return_time.isoformat() if return_time is not None else "",
                 flight_number,
                 str(raw["price"]),
             )
@@ -199,6 +212,29 @@ class TravelpayoutsFlightProvider(FlightProvider):
             if link
             else ("https://www.aviasales.com/search")
         )
+        segments = [
+            FlightSegment(
+                airline=airline,
+                flight_number=flight_number,
+                origin=origin,
+                destination=destination,
+                departure_time=departure_time,
+                arrival_time=arrival_time,
+                duration_minutes=outbound_duration,
+            ),
+        ]
+        if return_time is not None:
+            segments.append(
+                FlightSegment(
+                    airline=airline,
+                    flight_number=f"{airline_code} return",
+                    origin=destination,
+                    destination=origin,
+                    departure_time=return_time,
+                    arrival_time=return_time + timedelta(minutes=return_duration),
+                    duration_minutes=return_duration,
+                )
+            )
         return FlightOffer(
             id=offer_id,
             provider=self.get_provider_name(),
@@ -216,27 +252,8 @@ class TravelpayoutsFlightProvider(FlightProvider):
             cabin_class=request.cabin_class,
             booking_url=booking_url,
             retrieved_at=datetime.now(UTC),
-            segments=[
-                FlightSegment(
-                    airline=airline,
-                    flight_number=flight_number,
-                    origin=origin,
-                    destination=destination,
-                    departure_time=departure_time,
-                    arrival_time=arrival_time,
-                    duration_minutes=outbound_duration,
-                ),
-                FlightSegment(
-                    airline=airline,
-                    flight_number=f"{airline_code} return",
-                    origin=destination,
-                    destination=origin,
-                    departure_time=return_time,
-                    arrival_time=return_time + timedelta(minutes=return_duration),
-                    duration_minutes=return_duration,
-                ),
-            ],
-            return_date=return_time.date(),
+            segments=segments,
+            return_date=return_time.date() if return_time is not None else None,
         )
 
 
@@ -250,10 +267,14 @@ def _months_between(start: date, end: date) -> list[str]:
     return months
 
 
-def _month_pairs(request: FlightSearchRequest) -> list[tuple[str, str]]:
+def _month_pairs(request: FlightSearchRequest) -> list[tuple[str, str | None]]:
     departure_months = _months_between(
         request.earliest_departure_date, request.latest_departure_date
     )
+    if request.trip_type is TripType.one_way:
+        return [(departure, None) for departure in departure_months]
+    assert request.earliest_return_date is not None
+    assert request.latest_return_date is not None
     return_months = _months_between(
         request.earliest_return_date, request.latest_return_date
     )
@@ -269,6 +290,8 @@ def _supports_trip_length(
     request: FlightSearchRequest, departure_month: str, return_month: str
 ) -> bool:
     """Return whether a month pair can contain a 1–30 day Travelpayouts itinerary."""
+    assert request.earliest_return_date is not None
+    assert request.latest_return_date is not None
     departure_first, departure_last = _month_bounds(departure_month)
     return_first, return_last = _month_bounds(return_month)
     departure_start = max(request.earliest_departure_date, departure_first)

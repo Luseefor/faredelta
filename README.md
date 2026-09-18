@@ -9,14 +9,20 @@ FareDelta is a flexible-date flight search and airfare-intelligence application.
 ## What works today
 
 - Worldwide airport autocomplete with more than 9,000 active IATA airports
-- Flexible departure and return date windows
+- Round-trip and one-way search across flexible departure (and return) windows
+- Explore view: cheapest observed destinations from any origin
+- Nearby-airport expansion to the closest alternate on each end
 - Traveler, cabin, and stop filters
 - Recently observed Travelpayouts fares with explicit source labeling
 - Deterministic local-development provider for offline work
-- Flexible-date fare matrix
-- Cheapest, fastest, and balanced sorting
+- Flexible-date fare matrix (round-trip) with cheapest, fastest, and balanced sorting
 - PostgreSQL fare-history snapshots and route charts
-- Saved route tracking and manual price refreshes
+- Saved route tracking with pause/resume, editing, per-route check cadence, and manual price refreshes
+- Route detail pages with full fare-history charts
+- Scheduled refreshes with per-route cadence, staggering, and exponential backoff
+- Clerk accounts (email/password, Google OAuth, MFA) with cross-device watchlist sync and anonymous-route claim on sign in
+- Price alerts (target price and/or drop percentage) with in-app notification center, alerts overview, and email via Resend
+- Recent searches, shareable search links, browser-stored search defaults, and settings page
 - Responsive homepage, search results, empty states, and error states
 
 Travelpayouts results are cached observations, not guaranteed live inventory. FareDelta keeps provider adapters behind a shared interface so additional live-search sources can be added without changing the UI or internal offer model.
@@ -94,4 +100,4 @@ pnpm build
 
 ## Current scope
 
-FareDelta does not yet provide booking guarantees, price alerts by email, baggage comparison, nearby-airport expansion, or BUY/WAIT predictions. The current release establishes the typed provider, persistence, history, tracking, and responsive presentation layers those features will build on.
+FareDelta does not yet provide booking guarantees, baggage comparison, nearby-airport expansion, or BUY/WAIT predictions.

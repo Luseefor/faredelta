@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, MapPin, Search, SlidersHorizontal, UsersRound } from "lucide-react";
 
@@ -10,12 +10,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { allAirports } from "@/lib/airport-search";
+import { nearestAlternateAirports } from "@/lib/geo";
+import { DEFAULT_SETTINGS, loadSettings } from "@/lib/settings";
+import type { CabinClass } from "@/lib/types";
 
 function inputValue(form: FormData, name: string) { return String(form.get(name) ?? "").trim(); }
 
 export function FlightSearchForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [tripType, setTripType] = useState<"round_trip" | "one_way">("round_trip");
+  // Browser-stored defaults must match the SSR render, so they load after
+  // hydration; the combobox and selects below pick them up on update.
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [cabin, setCabin] = useState<CabinClass>(DEFAULT_SETTINGS.defaultCabin);
+  const [stops, setStops] = useState(String(DEFAULT_SETTINGS.defaultStops));
+
+  useEffect(() => {
+    Promise.resolve()
+      .then(() => loadSettings())
+      .then((loaded) => {
+        setSettings(loaded);
+        setCabin(loaded.defaultCabin);
+        setStops(String(loaded.defaultStops));
+      })
+      .catch(() => undefined);
+    return undefined;
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(null);
@@ -28,27 +50,57 @@ export function FlightSearchForm() {
     const latestReturn = inputValue(data, "latest_return_date");
     if (!/^[A-Z]{3}$/.test(origin) || !/^[A-Z]{3}$/.test(destination)) { setError("Enter valid three-letter airport codes for both airports."); return; }
     if (origin === destination) { setError("Origin and destination airports must be different."); return; }
-    if (!earliestDeparture || !latestDeparture || !earliestReturn || !latestReturn) { setError("Choose all four dates to search a flexible travel window."); return; }
-    if (earliestDeparture > latestDeparture || earliestReturn > latestReturn) { setError("Each earliest date must be on or before its latest date."); return; }
-    if (earliestReturn <= earliestDeparture || latestReturn <= latestDeparture) { setError("Your return window must be after your departure window."); return; }
-    const params = new URLSearchParams({ origin, destination, earliest_departure_date: earliestDeparture, latest_departure_date: latestDeparture, earliest_return_date: earliestReturn, latest_return_date: latestReturn, travelers: inputValue(data, "travelers"), cabin_class: inputValue(data, "cabin_class"), maximum_stops: inputValue(data, "maximum_stops") });
+    if (!earliestDeparture || !latestDeparture) { setError("Choose a departure window to search flexible travel dates."); return; }
+    if (earliestDeparture > latestDeparture) { setError("The earliest departure date must be on or before the latest departure date."); return; }
+    const oneWay = tripType === "one_way";
+    if (!oneWay) {
+      if (!earliestReturn || !latestReturn) { setError("Choose all four dates to search a flexible travel window."); return; }
+      if (earliestReturn > latestReturn) { setError("Each earliest date must be on or before its latest date."); return; }
+      if (earliestReturn <= earliestDeparture || latestReturn <= latestDeparture) { setError("Your return window must be after your departure window."); return; }
+    }
+    const includeNearby = data.get("include_nearby") === "on";
+    const airports = allAirports();
+    const originAlternates = includeNearby
+      ? nearestAlternateAirports(airports, origin, [destination]).map((airport) => airport.code)
+      : [];
+    const destinationAlternates = includeNearby
+      ? nearestAlternateAirports(airports, destination, [origin, ...originAlternates]).map((airport) => airport.code)
+      : [];
+    const params = new URLSearchParams({ origin, destination, trip_type: tripType, earliest_departure_date: earliestDeparture, latest_departure_date: latestDeparture, travelers: inputValue(data, "travelers"), cabin_class: inputValue(data, "cabin_class"), maximum_stops: inputValue(data, "maximum_stops") });
+    if (!oneWay) {
+      params.set("earliest_return_date", earliestReturn);
+      params.set("latest_return_date", latestReturn);
+    }
+    for (const code of originAlternates) params.append("origin_alternates", code);
+    for (const code of destinationAlternates) params.append("destination_alternates", code);
     router.push(`/search?${params.toString()}`);
   }
 
   return (
     <div className="overflow-hidden rounded-3xl border border-[#102f35]/8 bg-white shadow-[0_24px_70px_-34px_rgba(16,47,53,.42)]">
       <div className="flex items-center justify-between gap-3 border-b border-[#102f35]/8 px-4 py-3.5 sm:px-6">
-        <div className="flex items-center gap-3">
-          <span className="rounded-full bg-[#102f35] px-3 py-1.5 text-xs font-semibold text-white">Round trip</span>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-full bg-[#fbfaf7] p-1" role="group" aria-label="Trip type">
+            {(["round_trip", "one_way"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={tripType === value}
+                onClick={() => setTripType(value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b6566] motion-safe:active:scale-95 ${tripType === value ? "bg-[#102f35] text-white" : "text-[#102f35]/55 hover:text-[#102f35]"}`}
+              >
+                {value === "round_trip" ? "Round trip" : "One way"}
+              </button>
+            ))}
+          </div>
           <span className="hidden text-xs text-[#102f35]/50 sm:inline">Search across flexible dates</span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1b6566]"><SlidersHorizontal className="size-3.5" /> Flexible filters</span>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-5 lg:p-6">
         <div className="grid gap-3 lg:grid-cols-12">
           <div className="lg:col-span-3">
-          <AirportCombobox name="origin" label="Flying from" placeholder="Choose origin" />
+          <AirportCombobox name="origin" label="Flying from" placeholder="Choose origin" defaultCode={settings.homeAirport || undefined} />
           </div>
           <div className="lg:col-span-3">
           <AirportCombobox name="destination" label="Flying to" placeholder="Choose destination" />
@@ -56,9 +108,11 @@ export function FlightSearchForm() {
           <div className="lg:col-span-3">
           <DateWindow title="Departure window" prefix="departure" />
           </div>
-          <div className="lg:col-span-3">
-          <DateWindow title="Return window" prefix="return" />
-          </div>
+          {tripType === "round_trip" ? (
+            <div className="lg:col-span-3">
+            <DateWindow title="Return window" prefix="return" />
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-12">
@@ -68,12 +122,12 @@ export function FlightSearchForm() {
           </SelectField>
           </div>
           <div className="lg:col-span-2">
-          <SelectField icon={SlidersHorizontal} name="cabin_class" label="Cabin" defaultValue="economy">
+          <SelectField icon={SlidersHorizontal} name="cabin_class" label="Cabin" value={cabin} onValueChange={(value) => setCabin(value as CabinClass)}>
             <SelectItem value="economy">Economy</SelectItem><SelectItem value="premium_economy">Premium economy</SelectItem><SelectItem value="business">Business</SelectItem><SelectItem value="first">First</SelectItem>
           </SelectField>
           </div>
           <div className="lg:col-span-2">
-          <SelectField icon={MapPin} name="maximum_stops" label="Stops" defaultValue="1">
+          <SelectField icon={MapPin} name="maximum_stops" label="Stops" value={stops} onValueChange={setStops}>
             <SelectItem value="0">Nonstop only</SelectItem><SelectItem value="1">Up to 1 stop</SelectItem><SelectItem value="2">Up to 2 stops</SelectItem>
           </SelectField>
           </div>
@@ -82,6 +136,11 @@ export function FlightSearchForm() {
             <Search className="size-4" aria-hidden /> Search flexible dates <ArrowRight className="size-4" aria-hidden />
           </Button>
         </div>
+
+        <label className="mt-3 flex cursor-pointer items-center gap-2.5 rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] px-4 py-3 text-sm text-[#102f35]">
+          <input type="checkbox" name="include_nearby" className="size-4 cursor-pointer accent-[#1b6566]" />
+          <span><span className="font-semibold">Include nearby airports</span> <span className="text-[#102f35]/55">— also check the closest alternate airport on each end.</span></span>
+        </label>
 
         {error ? <Alert variant="destructive" role="alert" className="mt-5"><AlertTitle>Check your search</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
 
@@ -106,6 +165,6 @@ function DateField({ id, label }: { id: string; label: string }) {
   return <div className="min-w-0"><Label htmlFor={id} className="text-[10px] text-[#102f35]/50">{label}</Label><Input id={id} name={id} type="date" required className="mt-0.5 h-8 min-w-0 max-w-full border-0 bg-transparent px-0 text-[11px] font-semibold shadow-none focus-visible:ring-0" /></div>;
 }
 
-function SelectField({ icon: Icon, name, label, defaultValue, children }: { icon: typeof MapPin; name: string; label: string; defaultValue: string; children: React.ReactNode }) {
-  return <div className="h-full rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-3.5"><Label htmlFor={name} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#102f35]/55"><Icon className="size-3.5 text-[#1b6566]" />{label}</Label><Select name={name} defaultValue={defaultValue}><SelectTrigger id={name} className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:ring-0"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;
+function SelectField({ icon: Icon, name, label, defaultValue, value, onValueChange, children }: { icon: typeof MapPin; name: string; label: string; defaultValue?: string; value?: string; onValueChange?: (value: string) => void; children: React.ReactNode }) {
+  return <div className="h-full rounded-2xl border border-[#102f35]/12 bg-[#fbfaf7] p-3.5"><Label htmlFor={name} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#102f35]/55"><Icon className="size-3.5 text-[#1b6566]" />{label}</Label><Select name={name} defaultValue={defaultValue} value={value} onValueChange={onValueChange}><SelectTrigger id={name} className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:ring-0"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;
 }

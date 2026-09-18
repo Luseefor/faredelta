@@ -49,3 +49,7 @@ export function searchAirports(rawQuery: string, limit = 20) {
 export function airportCount() {
   return AIRPORTS.length;
 }
+
+export function allAirports() {
+  return AIRPORTS;
+}
