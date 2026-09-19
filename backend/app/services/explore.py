@@ -65,8 +65,8 @@ class ExploreService:
         destinations = sorted(
             (
                 item
-                for raw in _iter_fares(payload.get("data"))
-                for item in [parse_fare(query.origin, query.currency.upper(), raw)]
+                for destination, raw in _iter_fares(payload.get("data"))
+                for item in [parse_fare(query.origin, query.currency.upper(), raw, destination)]
                 if item is not None
             ),
             key=lambda item: item.price,
@@ -79,18 +79,41 @@ class ExploreService:
         )
 
 
-def _iter_fares(data: Any) -> list[dict[str, Any]]:
-    if isinstance(data, dict):
-        return [item for item in data.values() if isinstance(item, dict)]
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
+def _iter_fares(data: Any) -> list[tuple[str | None, dict[str, Any]]]:
+    """Flatten fare payloads, including doubly-nested {destination: {index: fare}} shapes."""
+    pairs: list[tuple[str | None, dict[str, Any]]] = []
+    groups: Any = (
+        data.items()
+        if isinstance(data, dict)
+        else [(None, item) for item in data]
+        if isinstance(data, list)
+        else []
+    )
+    for outer, item in groups:
+        if not isinstance(item, dict):
+            continue
+        if "price" in item:
+            pairs.append((outer if isinstance(outer, str) else None, item))
+        else:
+            pairs.extend(
+                (outer if isinstance(outer, str) else None, inner)
+                for inner in item.values()
+                if isinstance(inner, dict)
+            )
+    return pairs
 
 
-def parse_fare(origin: str, currency: str, raw: dict[str, Any]) -> CheapDestination | None:
+def parse_fare(
+    origin: str,
+    currency: str,
+    raw: dict[str, Any],
+    fallback_destination: str | None = None,
+) -> CheapDestination | None:
     try:
         price = Decimal(str(raw["price"]))
-        destination = str(raw.get("destination") or "").strip().upper()
+        destination = (
+            str(raw.get("destination") or fallback_destination or "").strip().upper()
+        )
         if price <= 0 or len(destination) != 3 or not destination.isalpha():
             return None
         return CheapDestination(
