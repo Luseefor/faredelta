@@ -34,6 +34,15 @@ async def test_cheap_destinations_parses_dict_and_list_shapes() -> None:
                         "return_at": "2026-11-12T18:00:00",
                         "transfers": 0,
                     },
+                    "ACC": {
+                        "1": {
+                            "airline": "TK",
+                            "departure_at": "2027-08-10T11:25:00-05:00",
+                            "return_at": "2027-08-24T07:00:00Z",
+                            "price": 1299,
+                            "flight_number": 186,
+                        }
+                    },
                     "junk": {"destination": "XX", "price": -5},
                 },
             },
@@ -43,12 +52,14 @@ async def test_cheap_destinations_parses_dict_and_list_shapes() -> None:
     assert service.configured is True
     response = await service.cheap_destinations(CheapDestinationsQuery(origin="ORD"))
     assert response.origin == "ORD"
-    assert response.result_count == 1
-    first = response.destinations[0]
-    assert first.destination == "LAX"
-    assert first.price == 189.5
-    assert first.airline == "UA"
-    assert first.transfers == 0
+    assert response.result_count == 2
+    by_destination = {item.destination: item for item in response.destinations}
+    assert by_destination["LAX"].price == 189.5
+    assert by_destination["LAX"].airline == "UA"
+    assert by_destination["LAX"].transfers == 0
+    assert by_destination["ACC"].price == 1299
+    assert by_destination["ACC"].flight_number == "186"
+    assert response.destinations[0].destination == "LAX"
 
 
 async def test_cheap_destinations_empty_without_token() -> None:
