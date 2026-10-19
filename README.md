@@ -1,10 +1,12 @@
 # FareDelta
 
-![FareDelta icon](frontend/src/app/icon.svg)
-
 FareDelta is a flexible-date flight search and airfare-intelligence application. It compares normalized fares across departure and return windows, saves observed prices, and turns repeated searches into useful route history.
 
 **Live:** [faredelta.rijan.sh](https://faredelta.rijan.sh)
+
+![FareDelta's flexible-date search form with nearby-airport options](docs/media/search-form.png)
+
+*Search form from the public beta. Fare availability depends on the connected provider.*
 
 ## What works today
 
@@ -100,4 +102,4 @@ pnpm build
 
 ## Current scope
 
-FareDelta does not yet provide booking guarantees, baggage comparison, nearby-airport expansion, or BUY/WAIT predictions.
+FareDelta does not yet provide booking guarantees, baggage comparison, or BUY/WAIT predictions. Nearby-airport expansion (one alternate per end, up to four airport pairs) already works — see [API docs](docs/api.md).
